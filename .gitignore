@@ -1,0 +1,6 @@
+/komuta-test-app
+/dist/
+*.log
+.DS_Store
+.idea/
+.vscode/

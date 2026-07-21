@@ -1,0 +1,116 @@
+# Sample Kubernetes manifest for deploying komuta-test-app outside of a
+# Komuta-managed pipeline (e.g. for local kind/k3d testing). When
+# deploying via Komuta itself, the platform generates its own manifests
+# from the service form — use this only as a reference for ports, env
+# vars, and probes.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: komuta-test-app
+  labels:
+    app: komuta-test-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: komuta-test-app
+  template:
+    metadata:
+      labels:
+        app: komuta-test-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/microzon-tech/komuta-test-app:latest
+          imagePullPolicy: Always
+          # Attack-simulation pod: run as root with the capabilities the
+          # capability / file / mount triggers exercise, so the BASELINE run of
+          # each trigger SUCCEEDS ("allowed") and a Komuta / KubeArmor block is
+          # what flips the verdict to "denied". Without this the pod can't
+          # perform the actions at all and every run reads "Couldn't run".
+          # NOTE: deploying via Komuta's service form generates its own pod
+          # spec and ignores this file — set the equivalent elevated security
+          # context there (the exec / network / dns tests work without it; the
+          # capability / sensitive-file / mount tests need it).
+          securityContext:
+            runAsUser: 0
+            capabilities:
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+                - SETUID
+                - SETGID
+                - NET_RAW
+                - SYS_PTRACE
+                - SYS_ADMIN
+                - MKNOD
+                - SYS_CHROOT
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            # Tag-driven preset behaviour:
+            #   *-bug   → POST /api/checkout fails 30% by default
+            #   *-slow  → +200ms baseline on every endpoint
+            #   else    → clean baseline (faults must be injected from UI)
+            - name: APP_VERSION
+              value: "v0.0.0-dev"
+            # ── M2M ingest (category-b security-ingest + supply-chain
+            #    scenarios). Unset = those scenarios skip cleanly;
+            #    cluster-native + Insights scenarios still work. For
+            #    runtime ingest, KOMUTA_CLIENT_ID/SECRET MUST be the
+            #    cluster's komuta-security-agent OAuth client so the
+            #    backend resolves client_id -> this cluster. Keep the
+            #    secret in a Secret, not inline. ────────────────────
+            # - name: KOMUTA_AUTH_URL
+            #   value: "https://auth.komuta.io"
+            # - name: KOMUTA_API_BASE
+            #   value: "https://komuta-api-xxxx.edge-4.komuta.app"
+            # - name: KOMUTA_CLUSTER_ID
+            #   value: "00000000-0000-0000-0000-000000000000"
+            # - name: KOMUTA_SERVICE_ID
+            #   value: "00000000-0000-0000-0000-000000000000"
+            # - name: KOMUTA_CLIENT_ID
+            #   valueFrom:
+            #     secretKeyRef: { name: komuta-test-app-m2m, key: clientId }
+            # - name: KOMUTA_CLIENT_SECRET
+            #   valueFrom:
+            #     secretKeyRef: { name: komuta-test-app-m2m, key: clientSecret }
+            # - name: HONEY_PATH
+            #   value: "/var/run/secrets/komuta-honey-token"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: komuta-test-app
+spec:
+  selector:
+    app: komuta-test-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  type: ClusterIP

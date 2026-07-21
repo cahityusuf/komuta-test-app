@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>komuta-test-app — scenario console</title>
+  <style>
+    :root{
+      --bg:#0f1117;--panel:#171a22;--panel-2:#1f242e;--border:#2a2f3a;
+      --text:#e6e8ee;--muted:#8a90a0;--primary:#5a8dee;--rose:#f06b6b;
+      --emerald:#4ad295;--amber:#f0a93b;--violet:#9b7bf0;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+    header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;
+      align-items:center;gap:12px;background:var(--panel);position:sticky;top:0;z-index:20}
+    header h1{margin:0;font-size:14px;font-weight:600}
+    .tag{font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px;color:var(--muted);
+      background:var(--panel-2);padding:2px 8px;border-radius:4px}
+    .toolbar{display:flex;gap:8px;margin-left:auto;align-items:center}
+    .langsw{display:flex;gap:4px}
+    .langsw button{font-size:11px;padding:3px 9px;background:var(--panel-2);
+      border:1px solid var(--border);color:var(--muted);border-radius:4px}
+    .langsw button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    /* layout: sticky sidebar + scrollable content */
+    .layout{display:flex;align-items:flex-start;gap:0;max-width:1320px;margin:0 auto}
+    aside.nav{position:sticky;top:49px;align-self:flex-start;width:240px;flex:none;
+      height:calc(100vh - 49px);overflow:auto;border-right:1px solid var(--border);
+      padding:14px 12px;background:var(--panel)}
+    .nav h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--muted);margin:14px 6px 6px}
+    .nav h3:first-child{margin-top:0}
+    .navlink{display:flex;justify-content:space-between;align-items:center;gap:8px;
+      padding:6px 8px;border-radius:5px;cursor:pointer;color:var(--text);font-size:12px}
+    .navlink:hover{background:var(--panel-2)}
+    .navlink.on{background:rgba(90,141,238,.14);color:var(--primary);font-weight:600}
+    .navlink .cnt{font-size:10.5px;color:var(--muted);background:var(--bg);
+      border:1px solid var(--border);border-radius:9px;padding:0 6px;min-width:20px;text-align:center}
+    .chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 4px 2px}
+    .chip{font-size:10.5px;padding:3px 9px;border-radius:11px;border:1px solid var(--border);
+      background:var(--panel-2);color:var(--muted);cursor:pointer}
+    .chip.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .chip.eng-KubeArmor.on{background:var(--rose);border-color:var(--rose)}
+    .chip.eng-Tetragon.on{background:var(--primary);border-color:var(--primary)}
+    .chip.eng-Hubble.on{background:var(--emerald);border-color:var(--emerald);color:#0f1117}
+    .chip.eng-Mixed.on{background:var(--violet);border-color:var(--violet)}
+
+    main{flex:1;min-width:0;padding:16px 20px;max-width:1080px}
+    .controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+    .search{flex:1;min-width:200px;position:relative}
+    .search input{width:100%;padding:8px 30px 8px 12px;background:var(--panel);
+      border:1px solid var(--border);border-radius:6px;color:var(--text);font:inherit;font-size:13px}
+    .search input:focus{outline:none;border-color:var(--primary)}
+    .search .x{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+      color:var(--muted);cursor:pointer;font-size:14px;display:none}
+    .search.has .x{display:block}
+    .count{font-size:11.5px;color:var(--muted);white-space:nowrap}
+    .banner{border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:14px;
+      font-size:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .banner.ok{border-color:rgba(74,210,149,.35);background:rgba(74,210,149,.08)}
+    .banner.warn{border-color:rgba(240,169,59,.35);background:rgba(240,169,59,.08)}
+    .banner code{font-family:ui-monospace,monospace;font-size:11px;color:var(--amber)}
+    h2.cat{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+      color:var(--muted);margin:22px 0 10px;scroll-margin-top:58px;
+      display:flex;align-items:center;gap:8px}
+    h2.cat .c{font-size:10.5px;color:var(--muted);background:var(--panel-2);
+      border:1px solid var(--border);border-radius:9px;padding:0 7px;font-weight:600}
+    .subcat{font-size:11px;font-weight:600;color:var(--text);margin:14px 0 8px;
+      display:flex;align-items:center;gap:8px;padding-left:2px;
+      border-left:3px solid var(--amber);padding:2px 0 2px 8px}
+    .subcat .c{font-size:10px;color:var(--muted);background:var(--panel-2);
+      border:1px solid var(--border);border-radius:9px;padding:0 7px;font-weight:600}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:1100px){.grid{grid-template-columns:1fr}}
+    .empty{padding:40px 10px;text-align:center;color:var(--muted);font-size:13px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;
+      display:flex;flex-direction:column;gap:8px}
+    .card .top{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+    .card .name{font-weight:600;font-size:13px}
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--border);flex:none;margin-top:5px}
+    .dot.ok{background:var(--emerald)}.dot.bad{background:var(--rose)}
+    .dot.run{background:var(--amber);animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .meta{font-size:11.5px;color:var(--muted)}
+    .meta b{color:var(--text);font-weight:600}
+    .ui{font-size:11.5px;color:var(--primary);border-left:2px solid var(--primary);
+      padding-left:8px;background:rgba(90,141,238,.06)}
+    .row{display:flex;gap:8px;align-items:center;margin-top:4px}
+    button{cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;
+      border-radius:4px;border:1px solid var(--border);background:var(--primary);color:#fff}
+    button.ghost{background:var(--panel-2);color:var(--text)}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .result{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--muted);
+      background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px 8px;
+      white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:auto;display:none}
+    .result.show{display:block}
+    .pill{font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--border);color:var(--muted)}
+    .pill.m2m{color:var(--violet);border-color:rgba(155,123,240,.4)}
+    .lastrun{font-size:10.5px;color:var(--muted)}
+    .eng{font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--border);
+      font-weight:600;flex:none}
+    .eng.KubeArmor{color:var(--rose);border-color:rgba(240,107,107,.4);background:rgba(240,107,107,.07)}
+    .eng.Tetragon{color:var(--primary);border-color:rgba(90,141,238,.4);background:rgba(90,141,238,.07)}
+    .eng.Hubble{color:var(--emerald);border-color:rgba(74,210,149,.4);background:rgba(74,210,149,.07)}
+    .eng.Mixed{color:var(--violet);border-color:rgba(155,123,240,.4);background:rgba(155,123,240,.07)}
+    .plain{border:1px solid var(--border);border-radius:6px;padding:8px 10px;
+      background:var(--panel-2);display:flex;flex-direction:column;gap:6px}
+    .plain .pf .lab{display:block;font-size:9.5px;font-weight:700;letter-spacing:.04em;
+      text-transform:uppercase;color:var(--muted);margin-bottom:1px}
+    .plain .pf .val{font-size:11.5px;color:var(--text)}
+    details.tech summary{font-size:10.5px;color:var(--muted);cursor:pointer;margin-top:2px}
+    details.tech .meta,details.tech .ui{margin-top:6px}
+    /* technique badge on a card (clickable → filter) */
+    .tb{font-size:10px;padding:1px 7px;border-radius:10px;cursor:pointer;flex:none;
+      color:var(--amber);border:1px solid rgba(240,169,59,.4);background:rgba(240,169,59,.07)}
+    .tb:hover{background:rgba(240,169,59,.16)}
+    /* block-test verdict badge — the run→block→re-run signal */
+    .vbwrap{flex:none}
+    .verdict{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:11px;
+      border:1px solid var(--border);white-space:nowrap}
+    .verdict.denied{color:var(--emerald);border-color:rgba(74,210,149,.5);background:rgba(74,210,149,.12)}
+    .verdict.allowed{color:var(--amber);border-color:rgba(240,169,59,.5);background:rgba(240,169,59,.12)}
+    .verdict.partial{color:var(--amber);border-color:rgba(240,169,59,.5);background:rgba(240,169,59,.08)}
+    .verdict.errored{color:var(--violet);border-color:rgba(155,123,240,.5);background:rgba(155,123,240,.12)}
+    .verdict.none{color:var(--muted);background:var(--panel-2)}
+    .verdict.running{color:var(--amber);background:var(--panel-2);animation:pulse 1s infinite}
+    /* block-test workflow explainer */
+    .blocktest{font-size:11.5px;color:var(--muted);border:1px dashed var(--border);
+      border-radius:8px;padding:8px 12px;margin-bottom:14px;line-height:1.5}
+    .navtoggle{display:none}
+    @media(max-width:820px){
+      aside.nav{position:fixed;left:0;top:49px;z-index:15;transform:translateX(-100%);
+        transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.4)}
+      aside.nav.open{transform:translateX(0)}
+      .navtoggle{display:inline-block}
+      main{max-width:none}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="ghost navtoggle" onclick="document.querySelector('aside.nav').classList.toggle('open')">☰</button>
+    <h1>komuta-test-app</h1>
+    <span class="tag" id="ver">…</span>
+    <span class="tag" id="svc"></span>
+    <div class="toolbar">
+      <span class="langsw">
+        <button id="lang-tr" onclick="setLang('tr')">TR</button>
+        <button id="lang-en" onclick="setLang('en')">EN</button>
+      </span>
+      <button class="ghost" id="btnRefresh" onclick="refresh()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="nav">
+      <h3 id="navCatTitle">Kategoriler</h3>
+      <div id="navCats"></div>
+      <h3 id="navTechTitle">Teknik</h3>
+      <div class="chips" id="navTechs"></div>
+      <h3 id="navEngTitle">Motor</h3>
+      <div class="chips" id="navEngines"></div>
+    </aside>
+    <main>
+      <div class="controls">
+        <div class="search" id="searchWrap">
+          <input id="q" type="search" autocomplete="off" placeholder="Senaryo ara…"
+                 oninput="onSearch(this.value)">
+          <span class="x" onclick="clearSearch()">✕</span>
+        </div>
+        <span class="count" id="count"></span>
+      </div>
+      <div id="banner" class="banner">Loading…</div>
+      <div id="blocktestHint" class="blocktest"></div>
+
+      <section class="card bwpanel" id="bwPanel" style="margin-bottom:14px">
+        <div class="name" id="bwTitle">Bandwidth Testi</div>
+        <div class="lastrun" id="bwDesc"></div>
+        <div class="row" style="margin-top:10px;align-items:center;gap:8px;flex-wrap:wrap">
+          <label for="bwSize" id="bwSizeLabel" style="font-size:13px;opacity:.8">Boyut (MB)</label>
+          <input id="bwSize" type="number" min="1" max="1024" value="50"
+                 style="width:84px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:inherit">
+          <button id="bwDlBtn" onclick="bwDownload()">↓ İndirme</button>
+          <button class="ghost" id="bwUlBtn" onclick="bwUpload()">↑ Yükleme</button>
+        </div>
+        <pre class="result show" id="bwResult" style="margin-top:10px"></pre>
+      </section>
+
+      <div id="cats"></div>
+    </main>
+  </div>
+
+<script>
+const CAT_ORDER = ["insights","security-native","security-ingest","supply-chain"];
+const ENGINES = ["Tetragon","KubeArmor","Hubble","Mixed"];
+// Attack techniques — the primary way to reach a specific test type in the
+// comprehensive matrix. Order = how they read as a kill-chain.
+const TECHNIQUES = ["exec","file-read","file-write","network","capability","dns","mount","chain"];
+
+let LANG = localStorage.getItem('komuta-test-lang') || '';
+let UI = {};
+let STATE = {scenarios:[], ingestReady:false, missingEnv:[], techniqueLabels:{}};
+let FILTER = { q:'', engine:'', category:'', technique:'' };  // '' = all
+
+function t(key, fb){ return (UI && UI[key]) || fb || key; }
+
+// Self-contained bilingual strings for the block-test surface, so the UI
+// reads correctly in both locales without depending on new console i18n
+// keys. Backend-supplied localized technique labels (STATE.techniqueLabels)
+// win when present; these are the fallback.
+const L = {
+  tr: {
+    techTitle:"Teknik", verdictAllowed:"İzin verildi", verdictDenied:"Engellendi",
+    verdictPartial:"Kısmen engellendi", verdictError:"Çalıştırılamadı", notRunV:"Çalıştırılmadı",
+    blocktest:"Blok testi: 1) Çalıştır → 2) Komuta'da engelle → 3) Tekrar çalıştır. Rozet \"İzin verildi\"den \"Engellendi\"ye dönmeli.",
+    tech:{exec:"Süreç çalıştırma","file-read":"Dosya okuma","file-write":"Dosya yazma",
+          network:"Ağ bağlantısı",capability:"Yetenek kullanımı",dns:"DNS",mount:"Bağlama (mount)",chain:"Saldırı zinciri"},
+  },
+  en: {
+    techTitle:"Technique", verdictAllowed:"Allowed", verdictDenied:"Blocked",
+    verdictPartial:"Partly blocked", verdictError:"Couldn't run", notRunV:"Not run",
+    blocktest:"Block test: 1) Run → 2) block in Komuta → 3) run again. The badge should flip from \"Allowed\" to \"Blocked\".",
+    tech:{exec:"Process exec","file-read":"File read","file-write":"File write",
+          network:"Network",capability:"Capability",dns:"DNS",mount:"Mount",chain:"Attack chain"},
+  },
+};
+function lx(k){ return (L[LANG] || L.tr)[k]; }
+function techLabel(x){
+  // Backend exposes techniqueLabels[x] = {tr, en}; pick the active locale.
+  const tl = STATE.techniqueLabels && STATE.techniqueLabels[x];
+  if(tl && typeof tl === 'object') return tl[LANG] || tl.tr || tl.en || x;
+  if(typeof tl === 'string') return tl;
+  return (L[LANG]||L.tr).tech[x] || x;
+}
+// Extract the block-test verdict from a run: native triggers return
+// {verdict}; chains return {chain:[{verdict}...]}. "denied" = policy
+// enforced (blocked), "allowed" = ran through (not blocked yet).
+function verdictOf(lr){
+  if(!lr || lr.result==null) return null;
+  const r = lr.result;
+  if(typeof r.verdict === 'string') return r.verdict;
+  if(Array.isArray(r.chain) && r.chain.length){
+    const vs = r.chain.map(c=>c && c.verdict).filter(Boolean);
+    if(vs.length && vs.every(v=>v==='error')) return 'error';
+    if(vs.some(v=>v==='denied')) return vs.every(v=>v==='denied') ? 'denied' : 'partial';
+    return 'allowed';
+  }
+  return null;
+}
+function langQS(){ return LANG ? ('?lang='+encodeURIComponent(LANG)) : ''; }
+function esc(x){ return String(x==null?'':x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function toggle(id){ document.getElementById('res-'+id).classList.toggle('show'); }
+
+async function loadI18n(){
+  const r = await fetch('/control/i18n'+langQS());
+  const d = await r.json();
+  UI = d.ui || {};
+  if(!LANG) LANG = d.locale || d.default || 'tr';
+  document.documentElement.lang = LANG;
+  document.title = t('title');
+  document.getElementById('btnRefresh').textContent = '↻ ' + t('refresh');
+  document.getElementById('lang-tr').classList.toggle('on', LANG==='tr');
+  document.getElementById('lang-en').classList.toggle('on', LANG==='en');
+  document.getElementById('q').placeholder = t('search.placeholder','Search scenarios…');
+  document.getElementById('navCatTitle').textContent = t('nav.categories','Categories');
+  document.getElementById('navTechTitle').textContent = lx('techTitle');
+  document.getElementById('navEngTitle').textContent = t('nav.engine','Engine');
+  document.getElementById('blocktestHint').textContent = lx('blocktest');
+  bwApplyI18n();
+}
+
+async function setLang(l){
+  LANG = l;
+  localStorage.setItem('komuta-test-lang', l);
+  await loadI18n();
+  await refresh();
+}
+
+async function refresh(){
+  const r = await fetch('/control/scenarios'+langQS());
+  STATE = await r.json();
+  document.getElementById('ver').textContent = STATE.version || '';
+  document.getElementById('svc').textContent =
+    STATE.serviceId ? 'svc='+STATE.serviceId.slice(0,8) : 'no KOMUTA_SERVICE_ID';
+  renderBanner();
+  renderNav();
+  render();
+}
+
+function renderBanner(){
+  const b = document.getElementById('banner');
+  if (STATE.ingestReady){
+    b.className='banner ok';
+    b.innerHTML='<b>✓</b> '+esc(t('banner.ok'));
+  } else {
+    b.className='banner warn';
+    b.innerHTML='<b>!</b> '+esc(t('banner.warn'))+' '+
+      (STATE.missingEnv||[]).map(e=>'<code>'+esc(e)+'</code>').join(' ');
+  }
+}
+
+// ── filtering ────────────────────────────────────────────────────
+function matches(s){
+  if(FILTER.engine && (s.engine||'') !== FILTER.engine) return false;
+  if(FILTER.technique && (s.technique||'') !== FILTER.technique) return false;
+  if(FILTER.category && s.category !== FILTER.category) return false;
+  if(FILTER.q){
+    const i = s.i18n || {};
+    const hay = [s.id, s.name, i.name, i.purpose, i.impact, i.threat,
+                 s.description, s.expected, s.engine, s.category,
+                 s.technique, techLabel(s.technique)]
+      .filter(Boolean).join(' ').toLowerCase();
+    if(!hay.includes(FILTER.q)) return false;
+  }
+  return true;
+}
+function visible(){ return STATE.scenarios.filter(matches); }
+
+function onSearch(v){
+  FILTER.q = v.trim().toLowerCase();
+  document.getElementById('searchWrap').classList.toggle('has', !!FILTER.q);
+  render();
+}
+function clearSearch(){ document.getElementById('q').value=''; onSearch(''); }
+function setCat(c){ FILTER.category = (FILTER.category===c?'':c); renderNav(); render(); }
+function setEng(e){ FILTER.engine = (FILTER.engine===e?'':e); renderNav(); render(); }
+function setTech(x){ FILTER.technique = (FILTER.technique===x?'':x); renderNav(); render(); }
+
+// ── sidebar ──────────────────────────────────────────────────────
+function renderNav(){
+  const all = STATE.scenarios;
+  const nc = document.getElementById('navCats');
+  nc.innerHTML='';
+  const allLink = document.createElement('div');
+  allLink.className='navlink'+(FILTER.category===''?' on':'');
+  allLink.innerHTML=`<span>${esc(t('nav.allCats','All categories'))}</span><span class="cnt">${all.length}</span>`;
+  allLink.onclick=()=>setCat('');
+  nc.appendChild(allLink);
+  for(const cat of CAT_ORDER){
+    const n = all.filter(s=>s.category===cat).length;
+    if(!n) continue;
+    const el=document.createElement('div');
+    el.className='navlink'+(FILTER.category===cat?' on':'');
+    el.innerHTML=`<span>${esc(t('cat.'+cat,cat))}</span><span class="cnt">${n}</span>`;
+    el.onclick=()=>{ setCat(cat);
+      const h=document.getElementById('sec-'+cat); if(h) h.scrollIntoView({behavior:'smooth',block:'start'}); };
+    nc.appendChild(el);
+  }
+  // Technique facet — the primary way to reach a specific attack type.
+  const nt=document.getElementById('navTechs');
+  nt.innerHTML='';
+  const mkTech=(val,label,on)=>{
+    const c=document.createElement('span');
+    c.className='chip tech-'+(val||'all')+(on?' on':'');
+    c.textContent=label; c.onclick=()=>setTech(val); return c;
+  };
+  nt.appendChild(mkTech('', t('filter.allEngines','All'), FILTER.technique===''));
+  for(const x of TECHNIQUES){
+    const n=all.filter(s=>(s.technique||'')===x).length;
+    if(!n) continue;
+    nt.appendChild(mkTech(x, techLabel(x)+' ('+n+')', FILTER.technique===x));
+  }
+
+  const ne=document.getElementById('navEngines');
+  ne.innerHTML='';
+  const mkChip=(val,label,cls)=>{
+    const c=document.createElement('span');
+    c.className='chip '+(cls||'')+(FILTER.engine===val?' on':'');
+    c.textContent=label; c.onclick=()=>setEng(val); return c;
+  };
+  ne.appendChild(mkChip('', t('filter.allEngines','All'), ''));
+  for(const e of ENGINES){
+    const n=all.filter(s=>(s.engine||'')===e).length;
+    if(!n) continue;
+    ne.appendChild(mkChip(e, t('engine.'+e,e)+' ('+n+')', 'eng-'+e));
+  }
+}
+
+// ── main grid ────────────────────────────────────────────────────
+function render(){
+  const vis = visible();
+  document.getElementById('count').textContent =
+    vis.length + ' / ' + STATE.scenarios.length + ' ' + t('results.label','scenarios');
+  const wrap=document.getElementById('cats');
+  wrap.innerHTML='';
+  if(!vis.length){
+    wrap.innerHTML=`<div class="empty">${esc(t('noresults','No matching scenarios'))}</div>`;
+    return;
+  }
+  const gridOf=(list)=>{
+    const g=document.createElement('div'); g.className='grid';
+    for(const s of list) g.appendChild(card(s));
+    return g;
+  };
+  for(const cat of CAT_ORDER){
+    const items = vis.filter(s=>s.category===cat);
+    if(!items.length) continue;
+    const h=document.createElement('h2'); h.className='cat'; h.id='sec-'+cat;
+    h.innerHTML=`${esc(t('cat.'+cat,cat))} <span class="c">${items.length}</span>`;
+    wrap.appendChild(h);
+    // The security-native matrix is large — sub-group it by technique so a
+    // specific attack type is one glance away. Skip sub-grouping when a
+    // technique facet is already active (the section is then one technique).
+    if(cat==='security-native' && !FILTER.technique){
+      for(const x of TECHNIQUES){
+        const sub = items.filter(s=>(s.technique||'')===x);
+        if(!sub.length) continue;
+        const sh=document.createElement('div'); sh.className='subcat';
+        sh.innerHTML=`${esc(techLabel(x))} <span class="c">${sub.length}</span>`;
+        wrap.appendChild(sh);
+        wrap.appendChild(gridOf(sub));
+      }
+      const none = items.filter(s=>!s.technique);
+      if(none.length) wrap.appendChild(gridOf(none));
+    } else {
+      wrap.appendChild(gridOf(items));
+    }
+  }
+}
+
+function fmtResult(lr){
+  if(!lr) return '';
+  try { return JSON.stringify(lr.result, null, 2); } catch { return String(lr.result); }
+}
+function lastRunText(lr){
+  if(!lr) return t('run.notRun');
+  const when = new Date(lr.endedAt).toLocaleTimeString();
+  return t('run.last')+' '+when+' · '+(lr.ok? t('run.ok') : t('run.check'));
+}
+function engineBadge(s){
+  if(!s.engine) return '';
+  return `<span class="eng ${esc(s.engine)}" title="${esc(t('engine.tip.'+s.engine,''))}">${esc(t('engine.'+s.engine,s.engine))}</span>`;
+}
+function techBadge(s){
+  if(!s.technique) return '';
+  return `<span class="tb" onclick="setTech('${esc(s.technique)}')" title="${esc(techLabel(s.technique))}">${esc(techLabel(s.technique))}</span>`;
+}
+// The block-test signal: allowed = ran through (not blocked), denied =
+// policy enforced (blocked). Renders nothing until the scenario is run.
+function verdictBadge(v){
+  if(v==='denied')  return `<span class="verdict denied" title="${esc(lx('blocktest'))}">⛔ ${esc(lx('verdictDenied'))}</span>`;
+  if(v==='allowed') return `<span class="verdict allowed" title="${esc(lx('blocktest'))}">▶ ${esc(lx('verdictAllowed'))}</span>`;
+  if(v==='partial') return `<span class="verdict partial" title="${esc(lx('blocktest'))}">◐ ${esc(lx('verdictPartial'))}</span>`;
+  // The syscall never ran (binary/target absent) — NOT a block. Distinct so
+  // it never reads as a false "Blocked".
+  if(v==='error')   return `<span class="verdict errored" title="${esc(lx('blocktest'))}">⚠ ${esc(lx('verdictError'))}</span>`;
+  return `<span class="verdict none">${esc(lx('notRunV'))}</span>`;
+}
+
+function card(s){
+  const lr = s.lastRun;
+  const i = s.i18n || {};
+  const name = i.name || s.name;
+  const el = document.createElement('div'); el.className='card'; el.id='card-'+s.id;
+
+  let plain='';
+  if(i.purpose||i.impact||i.threat){
+    const pf=(lab,val)=> val ? `<div class="pf"><span class="lab">${esc(t(lab))}</span><span class="val">${esc(val)}</span></div>` : '';
+    plain = `<div class="plain">${pf('label.purpose',i.purpose)}${pf('label.impact',i.impact)}${pf('label.threat',i.threat)}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="top">
+      <div>
+        <div class="name">${esc(name)}
+          ${engineBadge(s)}${techBadge(s)}
+          ${s.needsM2M?'<span class="pill m2m">'+esc(t('badge.m2m'))+'</span>':''}</div>
+        <div class="lastrun" id="lr-${s.id}">${esc(lastRunText(lr))}</div>
+      </div>
+      <div class="vbwrap" id="vb-${s.id}">${verdictBadge(verdictOf(lr))}</div>
+    </div>
+    ${plain}
+    <details class="tech">
+      <summary>${esc(t('label.does'))} · ${esc(t('label.expect'))} · ${esc(t('label.komutaUi'))}</summary>
+      <div class="meta"><b>${esc(t('label.does'))}:</b> ${esc(s.description)}</div>
+      <div class="meta"><b>${esc(t('label.expect'))}:</b> ${esc(s.expected)}</div>
+      <div class="ui">${esc(s.komutaUi)}</div>
+    </details>
+    <div class="row">
+      <button id="btn-${s.id}" onclick="run('${s.id}')">${esc(t('btn.run'))}</button>
+      <button class="ghost" onclick="toggle('${s.id}')">${esc(t('btn.result'))}</button>
+    </div>
+    <div class="result" id="res-${s.id}">${esc(fmtResult(lr))}</div>`;
+  return el;
+}
+
+async function run(id){
+  const btn=document.getElementById('btn-'+id), vb=document.getElementById('vb-'+id);
+  btn.disabled=true; if(vb) vb.innerHTML='<span class="verdict running">…</span>';
+  try{
+    const r=await fetch('/control/scenarios/'+id+'/run'+langQS(),{method:'POST'});
+    const v=await r.json();
+    const lr=v.lastRun;
+    if(vb) vb.innerHTML=verdictBadge(verdictOf(lr));
+    document.getElementById('lr-'+id).textContent = lastRunText(lr);
+    const res=document.getElementById('res-'+id);
+    res.textContent=fmtResult(lr); res.classList.add('show');
+  }catch(e){
+    if(vb) vb.innerHTML='<span class="verdict none">'+esc(lx('notRunV'))+'</span>';
+    const res=document.getElementById('res-'+id);
+    res.textContent='request failed: '+e; res.classList.add('show');
+  }finally{ btn.disabled=false; }
+}
+
+// ── bandwidth panel ──────────────────────────────────────────────
+function bwSizeMB(){ const n=parseInt(document.getElementById('bwSize').value,10); return (n>0&&n<=1024)?n:50; }
+function bwMbps(bytes,secs){ return secs>0?(bytes*8/1e6/secs).toFixed(2):'0'; }
+
+async function bwDownload(){
+  const mb=bwSizeMB(), btn=document.getElementById('bwDlBtn'), out=document.getElementById('bwResult');
+  btn.disabled=true; out.textContent=t('bw.running','Running…');
+  try{
+    const t0=performance.now();
+    const r=await fetch('/api/bandwidth/download?mb='+mb,{cache:'no-store'});
+    const buf=await r.arrayBuffer();
+    const secs=(performance.now()-t0)/1000;
+    out.textContent='↓ '+t('bw.egress','egress')+': '+(buf.byteLength/1048576).toFixed(1)+' MB · '+secs.toFixed(2)+' s · '+bwMbps(buf.byteLength,secs)+' Mbit/s';
+  }catch(e){ out.textContent='↓ '+t('bw.error','error')+': '+e; }
+  finally{ btn.disabled=false; }
+}
+
+async function bwUpload(){
+  const mb=bwSizeMB(), btn=document.getElementById('bwUlBtn'), out=document.getElementById('bwResult');
+  btn.disabled=true; out.textContent=t('bw.running','Running…');
+  try{
+    const bytes=mb*1048576, blob=new Blob([new Uint8Array(bytes)]);
+    const t0=performance.now();
+    const r=await fetch('/api/bandwidth/upload',{method:'POST',body:blob,cache:'no-store'});
+    const j=await r.json();
+    const secs=(performance.now()-t0)/1000;
+    out.textContent='↑ '+t('bw.ingress','ingress')+': '+(j.received_bytes/1048576).toFixed(1)+' MB · '+t('bw.server','server')+' '+j.mbps+' Mbit/s · '+t('bw.client','client')+' '+bwMbps(bytes,secs)+' Mbit/s';
+  }catch(e){ out.textContent='↑ '+t('bw.error','error')+': '+e; }
+  finally{ btn.disabled=false; }
+}
+
+function bwApplyI18n(){
+  document.getElementById('bwTitle').textContent  = t('bw.title','Bandwidth Test');
+  document.getElementById('bwDesc').textContent   = t('bw.desc','Download = pod egress · Upload = pod ingress. Throughput should clamp to the plan limit. Test from another node / external.');
+  document.getElementById('bwSizeLabel').textContent = t('bw.size','Size (MB)');
+  document.getElementById('bwDlBtn').textContent  = '↓ '+t('bw.download','Download');
+  document.getElementById('bwUlBtn').textContent  = '↑ '+t('bw.upload','Upload');
+}
+
+(async function init(){
+  await loadI18n();
+  await refresh();
+  setInterval(refresh, 20000);
+})();
+</script>
+</body>
+</html>

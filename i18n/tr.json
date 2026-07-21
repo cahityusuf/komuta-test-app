@@ -1,0 +1,438 @@
+{
+  "ui": {
+    "title": "komuta-test-app — senaryo konsolu",
+    "bw.title": "Bandwidth Testi",
+    "bw.desc": "İndirme = pod egress (Cilium BWM) · Yükleme = pod ingress (ingress-shaper). Ölçülen hız plana atanan limite sıkışmalıdır. Farklı node'dan / dışarıdan test et.",
+    "bw.size": "Boyut (MB)",
+    "bw.download": "İndirme",
+    "bw.upload": "Yükleme",
+    "bw.running": "Çalışıyor…",
+    "bw.error": "hata",
+    "bw.egress": "egress (indirme)",
+    "bw.ingress": "ingress (yükleme)",
+    "bw.server": "sunucu",
+    "bw.client": "istemci",
+    "subtitle": "Her senaryo gerçek bir davranışı taklit eder, Komuta'nın ne yapması gerektiğini ve nerede doğrulanacağını söyler.",
+    "refresh": "Yenile",
+    "lang.label": "Dil",
+    "search.placeholder": "Senaryo ara… (ad, amaç, motor)",
+    "nav.categories": "Kategoriler",
+    "nav.engine": "Motor",
+    "nav.allCats": "Tüm kategoriler",
+    "filter.allEngines": "Hepsi",
+    "results.label": "senaryo",
+    "noresults": "Eşleşen senaryo yok — filtreleri temizleyin",
+    "banner.ok": "M2M ingest yapılandırıldı — doğrudan sentetik ingest + tedarik zinciri senaryoları hazır.",
+    "banner.warn": "M2M ingest YAPILANDIRILMADI. Cluster-yerel güvenlik + Insights senaryoları yine de çalışır. Gerisini açmak için şunları ayarla:",
+    "cat.insights": "Insights — L7 trafik & arıza senaryoları",
+    "cat.security-native": "Güvenlik · cluster-yerel (gerçek syscall → KubeArmor/Tetragon → ajan)",
+    "cat.security-ingest": "Güvenlik · doğrudan sentetik ingest (M2M)",
+    "cat.supply-chain": "Tedarik zinciri · Tekton yapı-artefaktı ingest (M2M)",
+    "engine.KubeArmor": "KubeArmor",
+    "engine.Tetragon": "Tetragon",
+    "engine.Hubble": "Hubble",
+    "engine.Mixed": "Karma (çok aşamalı)",
+    "engine.tip.KubeArmor": "Politika zorlama — yasak eylemi anında engeller. Beklenen: ENGELLENDİ.",
+    "engine.tip.Tetragon": "Çalışma-zamanı izleme — şüpheli davranışı görüp raporlar. Beklenen: GÖRÜLDÜ/İŞARETLENDİ.",
+    "engine.tip.Hubble": "Ağ akışı görünürlüğü (L3/L4/L7).",
+    "engine.tip.Mixed": "Birden çok motoru kapsayan çok aşamalı saldırı zinciri.",
+    "nav.technique": "Teknik",
+    "filter.allTechniques": "Hepsi",
+    "technique.exec": "Süreç çalıştırma",
+    "technique.file-read": "Dosya okuma",
+    "technique.file-write": "Dosya yazma",
+    "technique.network": "Ağ bağlantısı",
+    "technique.capability": "Ayrıcalık (capability)",
+    "technique.dns": "DNS sorgusu",
+    "technique.mount": "Bağlama (mount)",
+    "technique.chain": "Saldırı zinciri",
+    "label.purpose": "Maksat",
+    "label.impact": "Etki",
+    "label.threat": "Neden tehdit?",
+    "label.does": "Ne yapar",
+    "label.expect": "Beklenen",
+    "label.komutaUi": "Komuta'da doğrula",
+    "btn.run": "Senaryoyu çalıştır",
+    "btn.result": "Sonuç",
+    "run.notRun": "henüz çalıştırılmadı",
+    "run.last": "son çalıştırma",
+    "run.ok": "TAMAM",
+    "run.check": "kontrol et",
+    "badge.m2m": "M2M"
+  },
+  "scenario": {
+    "insights-baseline-traffic": {
+      "name": "Düzenli L7 taban yükü",
+      "purpose": "Gerçekçi bir e-ticaret trafiğini sabit hızda akıtarak Insights'a normal bir davranış tabanı oluşturur.",
+      "impact": "Taban olmadan 'anormal' tanımlanamaz; bu senaryo kıyas noktasını kurar.",
+      "threat": "Tehdit değil — diğer tüm anomali/SLO tespitlerinin üzerine oturduğu sağlıklı temeldir."
+    },
+    "insights-latency-regression": {
+      "name": "Checkout'ta gecikme regresyonu",
+      "purpose": "Ödeme adımına yapay gecikme ekleyerek yavaşlayan bir sürümü taklit eder.",
+      "impact": "Kullanıcı ödeme yapamaz hale gelir; gelir doğrudan etkilenir.",
+      "threat": "Sessiz performans regresyonu en sık gözden kaçan üretim sorunudur. Insights'ın anomaliyi ve suçlu uç noktayı kendiliğinden işaretlemesi beklenir."
+    },
+    "insights-error-spike": {
+      "name": "5xx hata bütçesi tükenmesi",
+      "purpose": "Bir uç noktada yüksek oranda sunucu hatası (500) üreterek hizmet kalitesi düşüşünü taklit eder.",
+      "impact": "Kullanıcı isteklerinin büyük kısmı başarısız olur; hizmet fiilen kullanılamaz.",
+      "threat": "Hata patlaması bir kesintinin habercisidir. SLO yakım-hızı uyarısının zamanında ateşlenmesi beklenir."
+    },
+    "insights-path-clustering": {
+      "name": "Yol kümeleme dağılımı",
+      "purpose": "Çok sayıda farklı URL üreterek benzer yolların tek şablonda toplanıp toplanmadığını sınar.",
+      "impact": "Kümeleme çalışmazsa panolar binlerce gereksiz satırla dolar ve okunamaz hale gelir.",
+      "threat": "Tehdit değil — yüksek kardinaliteli trafiğin anlamlı kalmasını sağlayan görünürlük testidir."
+    },
+    "insights-deploy-impact": {
+      "name": "Dağıtım etkisi (v1.0→v1.1-bug→v1.2-fix)",
+      "purpose": "Aynı uygulamayı üç farklı sürümle dağıtarak Insights'ın sürümleri 'stabil/kötüleşti/iyileşti' diye sınıflamasını sınar.",
+      "impact": "Hatalı sürüm fark edilmezse kullanıcılar bozuk sürümde kalır.",
+      "threat": "Hatalı bir dağıtımın etkisini hızla görememek, kesinti süresini uzatan en yaygın sebeptir."
+    },
+    "sec-exec-shell": {
+      "name": "Kabuk çalıştırma (süreç engelleme)",
+      "purpose": "Uygulama konteynerinin içinde komut satırı (shell) başlatmayı dener.",
+      "impact": "Saldırgan kabuk açabilirse konteynerde istediği komutu çalıştırabilir.",
+      "threat": "Bir uygulamayı ele geçiren saldırganın ilk adımı genelde kabuk açmaktır. KubeArmor bunu engelleyebilmeli."
+    },
+    "sec-read-secret": {
+      "name": "Parola dosyasını okuma",
+      "purpose": "Sistem parolalarının tutulduğu hassas dosyayı (/etc/shadow) okumayı dener.",
+      "impact": "Dosya okunabilirse sistem parolaları çalınıp kırılabilir.",
+      "threat": "Kimlik bilgisi hırsızlığı klasik bir saldırı adımıdır; uygulamanın bu dosyaya erişmesi için sebep yoktur."
+    },
+    "sec-install-tool": {
+      "name": "Paket yöneticisi çağrısı",
+      "purpose": "Konteyner içinde paket yöneticisi (apk/apt) çalıştırarak araç kurmayı dener.",
+      "impact": "Saldırgan ek saldırı araçları kurabilirse yetenekleri ciddi artar.",
+      "threat": "Çalışan üretim konteynerine araç kurmak neredeyse her zaman kötü niyetlidir; konteyner salt-okunur olmalı."
+    },
+    "sec-file-tamper": {
+      "name": "/etc'yi kurcalama (izinli alan dışına yazma)",
+      "purpose": "Korunan sistem klasörüne (/etc) dosya yazmayı dener.",
+      "impact": "Sistem dosyaları değiştirilebilirse kalıcı arka kapı bırakılabilir.",
+      "threat": "Kalıcılık, saldırganın sistemde kalıcı yer edinmesidir; uygulama yalnızca geçici alanına yazabilmeli."
+    },
+    "sec-network-egress": {
+      "name": "İnternete beklenmeyen çıkış",
+      "purpose": "İzin verilmemiş bir dış adrese internet bağlantısı açmayı dener.",
+      "impact": "Saldırgan dışarı bağlanabilirse komut alıp çalınan veriyi gönderebilir.",
+      "threat": "Ele geçirilmiş konteynerlerin dış komuta-kontrol sunucusuna bağlanması en tipik davranıştır. Tetragon'un çıkışı görmesi beklenir."
+    },
+    "sec-honey-path": {
+      "name": "Tuzak-dosya erişimi (deterministik Tetragon)",
+      "purpose": "Yalnızca saldırganların ilgileneceği, kasıtla yerleştirilmiş bir tuzak dosyaya erişmeyi dener.",
+      "impact": "Tuzağa dokunulması neredeyse kesin kötü-niyet işaretidir; erken uyarı sağlar.",
+      "threat": "Tuzak-dosya, gürültüsüz ve yüksek-kesinlikli bir izinsiz-giriş sinyalidir. Tetragon'un bu erişimi anında olaya çevirmesi beklenir."
+    },
+    "sec-dns-exfil": {
+      "name": "Şüpheli DNS (sızdırma/C2 göstergesi)",
+      "purpose": "Tuhaf görünümlü bir alan adı sorgusu yaparak DNS üzerinden veri sızdırma/komuta-kontrol desenini taklit eder.",
+      "impact": "Veri sızıntısı DNS içine gizlendiği için çoğu güvenlik duvarından fark edilmeden geçer.",
+      "threat": "DNS tüneli, klasik ağ denetimlerini atlatarak veri çalmanın sinsi yöntemidir. Tetragon'un anormal sorguyu yakalaması beklenir."
+    },
+    "sec-capability-use": {
+      "name": "Ayrıcalıklı yetenek kullanımı",
+      "purpose": "Yalnızca yöneticinin yapabileceği bir işlemi (dosya sahipliğini değiştirme) deneyerek yetenek kötüye-kullanımını taklit eder.",
+      "impact": "Saldırgan ayrıcalıklı yetenek kullanabilirse konteyner sınırlarını aşmaya yaklaşır.",
+      "threat": "Ayrıcalıklı yetenekler, sınırlı erişimi tam kontrole çeviren basamaklardır. KubeArmor yetenek kuralının bunu yakalaması beklenir."
+    },
+    "sec-mount-attempt": {
+      "name": "Mount denemesi (konteyner kaçışı öncülü)",
+      "purpose": "Dosya sistemi bağlama (mount) işlemi deneyerek konteynerden kaçış girişiminin tipik öncülünü taklit eder.",
+      "impact": "Mount başarılı olursa saldırgan host dosya sistemine ulaşıp düğümü ele geçirebilir.",
+      "threat": "Mount denemesi, konteyner kaçışının klasik habercisidir. KubeArmor'ın bu syscall'ı engellemesi beklenir."
+    },
+    "sec-attack-chain": {
+      "name": "Çok aşamalı saldırı zinciri",
+      "purpose": "Sırayla kabuk → yetenek → parola okuma → çıkış adımlarını işleterek gerçek bir saldırı zincirini taklit eder.",
+      "impact": "Tek tek zayıf görünen adımlar birleştiğinde tam ele geçirmeye dönüşür.",
+      "threat": "Gerçek saldırılar tek adımdan değil zincirden oluşur. Motorların adımları birbirine bağlayıp zinciri görebilmesi beklenir."
+    },
+    "sec-exec-bash": {
+      "name": "bash çalıştır",
+      "purpose": "Konteyner içinde bash kabuğunu başlatır.",
+      "threat": "Kabuk, saldırganın ilk dayanağıdır; üretim uygulamasının kabuk açması için sebep yoktur. KubeArmor engellemelidir."
+    },
+    "sec-exec-kubectl": {
+      "name": "Pod içinde kubectl çalıştır",
+      "purpose": "Kubernetes CLI'ını bir iş yükü pod'unun içinden çalıştırır.",
+      "threat": "Uygulama pod'unda cluster aracı, genellikle saldırganın cluster'ı keşfettiği anlamına gelir; orada olmamalıdır."
+    },
+    "sec-exec-curl": {
+      "name": "curl çalıştır",
+      "purpose": "Yük indirmek/dışarı ulaşmak için sık kullanılan curl aracını çalıştırır.",
+      "threat": "Saldırganlar ikinci-aşama araçları çekmek için curl kullanır; uygulama imajının bunu çalıştırmaya nadiren ihtiyacı olur."
+    },
+    "sec-exec-wget": {
+      "name": "wget çalıştır",
+      "purpose": "Bir başka yaygın yük-indirme aracı olan wget'i çalıştırır.",
+      "threat": "curl gibi wget de ele geçirilmiş konteynere saldırgan araçları çekmenin klasik yoludur."
+    },
+    "sec-exec-nc": {
+      "name": "netcat çalıştır",
+      "purpose": "Ağ bağlantısı ve ters kabuk açmak için çok amaçlı bir araç olan netcat'i çalıştırır.",
+      "threat": "Çalışan bir pod'da netcat güçlü bir ters-kabuk/sızdırma işaretidir; engellenmelidir."
+    },
+    "sec-exec-socat": {
+      "name": "socat çalıştır",
+      "purpose": "Ters kabuk ve tünel için sık kullanılan relay aracı socat'i çalıştırır.",
+      "threat": "socat gizli kanallar kurmak için tercih edilir; uygulamanın bunu çalıştırmaya meşru ihtiyacı yoktur."
+    },
+    "sec-exec-python": {
+      "name": "python3 çalıştır",
+      "purpose": "Konteyner içinde Python yorumlayıcısını başlatır.",
+      "threat": "Yorumlayıcı saldırgana keyfi kod çalıştırma imkânı verir; beklenmedik bir python exec'i tehlike işaretidir."
+    },
+    "sec-exec-perl": {
+      "name": "perl çalıştır",
+      "purpose": "Konteyner içinde Perl yorumlayıcısını başlatır.",
+      "threat": "python gibi, beklenmedik yorumlayıcı exec'i bellekte saldırgan kodu çalıştırmanın yaygın yoludur."
+    },
+    "sec-exec-nmap": {
+      "name": "nmap çalıştır (tarayıcı)",
+      "purpose": "nmap ağ tarayıcısını pod içinde çalıştırır.",
+      "threat": "Bir iş yükünde tarayıcı çalışması neredeyse her zaman saldırganın yatay hareket için ağı haritaladığı anlamına gelir."
+    },
+    "sec-exec-base64": {
+      "name": "base64 çalıştır",
+      "purpose": "Gizli sızdırma için veriyi kodlamakta sık kullanılan base64'ü çalıştırır.",
+      "threat": "base64 neredeyse her sızdırma ve gizleme zincirinde görülür; beklenmedik exec şüphelidir."
+    },
+    "sec-exec-chmod": {
+      "name": "Dosyayı çalıştırılabilir yap (chmod +x)",
+      "purpose": "Bırakılan bir dosyayı chmod +x ile çalıştırılabilir işaretler.",
+      "threat": "Yeni bırakılan dosyayı çalıştırılabilir yapmak, saldırgan araçlarını çalıştırmadan önceki klasik adımdır."
+    },
+    "sec-exec-crontab": {
+      "name": "crontab çalıştır",
+      "purpose": "Kalıcılık için görev zamanlamada kullanılan crontab'ı çağırır.",
+      "threat": "İş zamanlamak saldırganın yeniden başlatmalardan kurtulma yoludur; uygulama pod'unda crontab kalıcılık işaretidir."
+    },
+    "sec-exec-ssh": {
+      "name": "ssh istemcisi çalıştır",
+      "purpose": "Başka bir sunucuya ulaşmak için ssh istemcisini çalıştırır.",
+      "threat": "İş yükünden dışarı ssh yatay-hareketin klasik hamlesidir; olmaması gerekir."
+    },
+    "sec-exec-dropped-bin": {
+      "name": "İkili bırak ve çalıştır",
+      "purpose": "Bir ikiliyi /tmp'e kopyalar, çalıştırılabilir yapar ve çalıştırır.",
+      "threat": "Bir aracı bırakıp çalıştırmak çoğu saldırının çekirdeğidir; bilinmeyen ikilinin exec'i engellenmelidir."
+    },
+    "sec-read-passwd": {
+      "name": "/etc/passwd oku",
+      "purpose": "Sistem hesap listesi dosyasını okur.",
+      "threat": "Hesap sayımı erken bir keşif adımıdır; uygulamanın bu dosyayı okumaya sebebi yoktur."
+    },
+    "sec-read-ssh-key": {
+      "name": "SSH özel anahtarını oku",
+      "purpose": "root'un SSH özel anahtarını okumaya çalışır.",
+      "threat": "Özel anahtar çalmak saldırganın başka yerlerde sizin adınıza giriş yapmasını sağlar; bu erişim engellenmelidir."
+    },
+    "sec-read-sa-token": {
+      "name": "Kubernetes token'ını oku",
+      "purpose": "Pod'un Kubernetes servis-hesabı token'ını okur.",
+      "threat": "Bu token pod'un cluster kimliğidir; çalınırsa saldırgan API sunucusuna karşı iş yükü gibi davranabilir."
+    },
+    "sec-read-proc-environ": {
+      "name": "Başka sürecin ortamını oku",
+      "purpose": "Ana sürecin ortam değişkenlerini görmek için /proc/1/environ'ı okur.",
+      "threat": "Ortam değişkenleri çoğu zaman sır barındırır; başka sürecin env'ini okumak yaygın bir kimlik-hasadı hilesidir."
+    },
+    "sec-read-kubeconfig-admin": {
+      "name": "Cluster yönetici konfigini oku",
+      "purpose": "Cluster-admin kubeconfig'ini okumaya çalışır.",
+      "threat": "Bu dosya tam cluster kontrolüdür; bir iş yükü okuyabiliyorsa tek ele geçirilen pod tüm cluster'ı ele geçirir."
+    },
+    "sec-read-kubelet-conf": {
+      "name": "kubelet konfigini oku",
+      "purpose": "Node'un kubelet yapılandırmasını okumaya çalışır.",
+      "threat": "Node konfigi host kurulumunu açığa çıkarır ve node ele geçirmeye yardım eder; iş yükü bunu asla okumamalıdır."
+    },
+    "sec-read-aws-creds": {
+      "name": "AWS kimlik bilgilerini oku",
+      "purpose": "Saklanan bulut (AWS) kimlik bilgilerini okumaya çalışır.",
+      "threat": "Çalınan bulut anahtarları saldırganın bulut hesabınıza sıçramasını sağlar; bu dosya erişilemez olmalıdır."
+    },
+    "sec-read-kube-config": {
+      "name": "Kullanıcı kubeconfig'ini oku",
+      "purpose": "Bir kullanıcı kubeconfig dosyasını okumaya çalışır.",
+      "threat": "kubeconfig dosya hâlinde cluster kimlik bilgisidir; okumak doğrudan kimlik-hırsızlığı girişimidir."
+    },
+    "sec-write-authkeys": {
+      "name": "SSH arka-kapı anahtarı ek",
+      "purpose": "Sessiz gelecekteki girişler için SSH authorized_keys kaydı yazar.",
+      "threat": "Anahtar eklemek saldırgana kalıcı arka kapı verir; bu dosyaya yazma engellenmelidir."
+    },
+    "sec-write-cron": {
+      "name": "cron kalıcılık işi ek",
+      "purpose": "/etc/cron.d altına zamanlanmış bir iş yazar.",
+      "threat": "cron kaydı saldırgan kodunu zamanlı yeniden çalıştırır; en yaygın kalıcılık hilelerinden biridir."
+    },
+    "sec-write-usrbin": {
+      "name": "/usr/bin'e dosya bırak",
+      "purpose": "Sistem ikilileri dizinine bir dosya yazar.",
+      "threat": "Güvenilir ikililer arasına dosya koymak normal komutları ele geçirebilir; sistem dizinleri salt-okunur olmalıdır."
+    },
+    "sec-write-ldpreload": {
+      "name": "ld.so.preload ile oynama",
+      "purpose": "Kötücül bir kütüphaneyi yüklemeye zorlamak için /etc/ld.so.preload yazar.",
+      "threat": "ld.so.preload her programa sessizce kod enjekte eder; gizli ve güçlü bir arka-kapı tekniğidir."
+    },
+    "sec-write-bashrc": {
+      "name": ".bashrc ile oynama",
+      "purpose": "root'un kabuk başlangıç dosyasını yazar.",
+      "threat": "Kabuk-başlangıç dosyaları her girişte saldırgan komutlarını yeniden çalıştırır; klasik sessiz kalıcılık noktası."
+    },
+    "sec-write-spoolcron": {
+      "name": "Kullanıcı crontab'ı ek",
+      "purpose": "/var/spool/cron altına bir kullanıcı crontab'ı yazar.",
+      "threat": "Başka bir kalıcılık yolu: kullanıcı crontab'ı kodu zamanlı çalıştırır ve gözden kaçması kolaydır."
+    },
+    "sec-net-dns-tcp": {
+      "name": "Genel DNS'e doğrudan bağlantı",
+      "purpose": "Doğrudan bir genel DNS çözücüsüne (1.1.1.1) TCP bağlantısı açar.",
+      "threat": "Dış çözücüye doğrudan ulaşmak kontrolleri atlayabilir ve tünelleme için kullanılabilir; egress kısıtlı olmalıdır."
+    },
+    "sec-net-oddport": {
+      "name": "Tuhaf yüksek porta bağlan",
+      "purpose": "İnternette olağandışı bir yüksek porta TCP bağlantısı açar.",
+      "threat": "Tuhaf-port egress'i yaygın bir komuta-kontrol desenidir; normal trafik rastgele yüksek portları kullanmaz."
+    },
+    "sec-net-metadata": {
+      "name": "Bulut metadata ucuna ulaş",
+      "purpose": "Bulut metadata adresine (169.254.169.254) bağlanır.",
+      "threat": "Bu uç bulut kimlik bilgisi dağıtır; ona karşı SSRF üst düzey bir bulut-saldırısıdır ve engellenmelidir."
+    },
+    "sec-net-revshell": {
+      "name": "Ters-kabuk portuna bağlan",
+      "purpose": "Klasik ters-kabuk portu 4444'e TCP bağlantısı açar.",
+      "threat": "4444'e dışarı bağlantı ders kitabı ters-kabuk işaretidir; ağ politikası bunu düşürmelidir."
+    },
+    "sec-cap-setuid": {
+      "name": "root ol (setuid)",
+      "purpose": "Süreç kullanıcısını root'a geçirmeye çalışır.",
+      "threat": "Konteyner içinde root olmak ana güvenlik sınırını kaldırır; ayrıcalık-düşürülmüş pod 'engellendi' döndürmelidir."
+    },
+    "sec-cap-net-raw": {
+      "name": "Ham ağ soketi aç",
+      "purpose": "Ham bir ağ soketi oluşturmaya çalışır (özel ayrıcalık gerektirir).",
+      "threat": "Ham soketler sahtecilik ve gizli taramaya imkân verir; bir uygulamada bu yetenek bulunmamalıdır."
+    },
+    "sec-cap-ptrace": {
+      "name": "Başka sürece bağlan (ptrace)",
+      "purpose": "Ana sürece bağlanıp inceleme/enjeksiyon yapmaya çalışır.",
+      "threat": "Sürece bağlanma kod enjeksiyonu ve diğer süreçlerden sır çalmayı sağlar; engellenmelidir."
+    },
+    "sec-cap-sethostname": {
+      "name": "Hostname değiştir",
+      "purpose": "Konteyner hostname'ini değiştirmeye çalışır (yalnız yönetici işlemi).",
+      "threat": "Bu yönetici ayrıcalığına ihtiyaç aşırı-yetkilendirme işaretidir; normal iş yüküne CAP_SYS_ADMIN reddedilmelidir."
+    },
+    "sec-cap-mknod": {
+      "name": "Aygıt düğümü oluştur (mknod)",
+      "purpose": "Konteyner içinde bir aygıt dosyası oluşturmaya çalışır.",
+      "threat": "Aygıt düğümü oluşturmak ham donanım/disk erişimi açabilir ve kaçışa yardım eder; yetenek düşürülmelidir."
+    },
+    "sec-dns-longlabel": {
+      "name": "DNS tüneli (uzun etiketli sorgu)",
+      "purpose": "DNS içine gizlenmiş veriyi taklit etmek için çok uzun, kodlanmış görünümlü bir isim sorgular.",
+      "threat": "Uzun, yüksek-entropili DNS isimleri DNS tünellemenin imzasıdır; Tetragon anormal sorguyu işaretlemelidir."
+    },
+    "sec-mount-procremount": {
+      "name": "/proc'u yeniden bağla",
+      "purpose": "/proc dosya sistemini yeniden bağlamaya (remount) çalışır.",
+      "threat": "/proc'u yeniden bağlamak konteyner izolasyonundan kaçışa giden bilinen bir adımdır; bağlama reddedilmelidir."
+    },
+    "sec-chain-cred-access": {
+      "name": "Kimlik-erişim zinciri",
+      "purpose": "Sırayla Kubernetes token'ını okur, bulut metadata ucuna gider, sonra dışarı ulaşır.",
+      "threat": "Bu, kanonik kimlik-çal → buluta-sıçra → sızdır zinciridir; motorlar adımları birbirine bağlamalıdır."
+    },
+    "sec-chain-privesc": {
+      "name": "Ayrıcalık-yükseltme zinciri",
+      "purpose": "Sırayla kabuk açar, bir dosyayı çalıştırılabilir yapar, ardından root olmayı dener.",
+      "threat": "Gerçekçi bir yerel ayrıcalık-yükseltme dizisi; ilişkili exec ve ayrıcalık bulguları tek zincir olarak görünmelidir."
+    },
+    "sec-ingest-runtime-tetragon": {
+      "name": "Sentetik Tetragon çalışma-zamanı yığını",
+      "purpose": "Gerçek bir cluster beklemeden, Tetragon'un üreteceği olay yığınını doğrudan backend'e göndererek tespit hattını test eder.",
+      "impact": "Hat bozuksa gerçek tehditler de görünmez kalır; bu senaryo bunu erken yakalar.",
+      "threat": "Tehdit simülasyonu — Tetragon→ajan→Security Center hattının uçtan uca çalıştığını kanıtlar."
+    },
+    "sec-ingest-runtime-kubearmor": {
+      "name": "Sentetik KubeArmor çalışma-zamanı yığını",
+      "purpose": "KubeArmor'ın üreteceği ihlal yığınını doğrudan backend'e göndererek bulgu üretim hattını test eder.",
+      "impact": "Hat bozuksa engellenen ihlaller raporlanmaz; bu senaryo bunu erken yakalar.",
+      "threat": "Tehdit simülasyonu — KubeArmor→bulgu hattının uçtan uca çalıştığını kanıtlar."
+    },
+    "sec-ingest-runtime-hubble": {
+      "name": "Sentetik Hubble çalışma-zamanı yığını",
+      "purpose": "Hubble'ın üreteceği ağ akışı yığınını doğrudan backend'e göndererek akış ingest hattını test eder.",
+      "impact": "Hat bozuksa ağ görünürlüğü kaybolur; bu senaryo bunu erken yakalar.",
+      "threat": "Tehdit simülasyonu — Hubble akış ingest hattının uçtan uca çalıştığını kanıtlar."
+    },
+    "sec-ingest-observations": {
+      "name": "KubeArmor gözlemleri → bulgu",
+      "purpose": "Ham KubeArmor gözlemlerini gönderip bunların anlamlı bir güvenlik bulgusuna dönüşüp dönüşmediğini sınar.",
+      "impact": "Dönüşüm bozuksa ihlaller ham veri olarak kalır, kimse fark etmez.",
+      "threat": "Tehdit simülasyonu — gözlemden eyleme-dönük bulguya geçişin çalıştığını kanıtlar."
+    },
+    "sec-collector-decay": {
+      "name": "Toplayıcı sinyali sonra sessizlik",
+      "purpose": "Önce düzenli sinyal gönderip sonra susarak bir güvenlik toplayıcısının çökmesini taklit eder.",
+      "impact": "Toplayıcı sessizce ölürse tüm tespit kör kalır ama panolar 'yeşil' görünmeye devam eder.",
+      "threat": "Sessizce ölen bir güvenlik sensörü, en tehlikeli kör noktadır. Sistemin 'sustu' alarmını üretmesi beklenir."
+    },
+    "sec-synthetic-attack": {
+      "name": "Sentetik saldırı koşusu tetikleme",
+      "purpose": "Security Center'ın planlı saldırı tatbikatı mekanizmasını dışarıdan tetikler.",
+      "impact": "Tatbikat çalışmazsa tespit SLA'ları hiç ölçülmez.",
+      "threat": "Tehdit simülasyonu — tespit yeteneğinin düzenli olarak kendini sınamasını sağlayan mekanizmayı doğrular."
+    },
+    "supply-sbom": {
+      "name": "Yapı artefaktı: SBOM",
+      "purpose": "Bir derleme sonrası üretilen yazılım malzeme listesini (SBOM) backend'e göndererek tedarik zinciri kaydını test eder.",
+      "impact": "SBOM kaydedilmezse hangi sürümde hangi bileşenin olduğu izlenemez.",
+      "threat": "Tedarik zinciri görünürlüğü, bileşen-temelli zafiyetlerin izini sürmenin ön koşuludur."
+    },
+    "supply-scan-critical": {
+      "name": "Yapı artefaktı: tarama (kritik CVE)",
+      "purpose": "Kritik güvenlik açıkları içeren bir tarama sonucu göndererek zafiyet kapısının tepkisini sınar.",
+      "impact": "Kritik açıklı imaj engellenmezse bilinen zafiyetli kod üretime çıkar.",
+      "threat": "Bilinen kritik açıklı bir imajın dağıtıma geçmesi, en kolay önlenebilir ama en sık ihmal edilen risktir."
+    },
+    "supply-sign": {
+      "name": "Yapı artefaktı: imza",
+      "purpose": "İmza doğrulama kaydı göndererek yalnızca güvenilir kaynaklı imajların kabul edildiğini sınar.",
+      "impact": "İmza zorunlu değilse saldırgan sahte/değiştirilmiş imaj sokabilir.",
+      "threat": "İmzasız imaj kabulü, tedarik zincirine kötü-amaçlı kod sokmanın klasik yoludur."
+    },
+    "supply-fail": {
+      "name": "Yapı artefaktı: başarısızlık",
+      "purpose": "Bir derleme/güvenlik kapısı başarısızlığını göndererek başarısız yapının doğru kaydedilip engellendiğini sınar.",
+      "impact": "Başarısızlık yutulursa bozuk/güvensiz yapı sessizce ilerleyebilir.",
+      "threat": "Başarısız kapının sessizce geçilmesi, güvenlik denetimlerini fiilen devre dışı bırakır."
+    },
+    "sec-ddos-flood-self": {
+      "name": "DDoS seli — self-service (otomatik çözümleme, world yedeği)",
+      "purpose": "Bu uygulamanın kendi servisine on binlerce taze bağlantı açarak DDoS detektörünün gerçek trafikte gerçekten tetiklendiğini kanıtlar.",
+      "impact": "Fark edilmezse bağlantı seli servisi tüketir ve gerçek kullanıcılara hizmeti keser.",
+      "threat": "Hacimsel seller en yaygın hizmet-dışı bırakma yöntemidir; detektörün bu servise atıflı (world yedeğine düşerse cluster kapsamlı) bir olay oluşturması beklenir."
+    },
+    "sec-ddos-flood-world": {
+      "name": "DDoS seli — harici hedef (cluster kapsamlı)",
+      "purpose": "Pod içinden harici bir hedefe sel göndererek detektörün tenant hedefi olmayan dışa dönük selleri de yakaladığını kanıtlar.",
+      "impact": "Ele geçirilmiş bir workload'ın dış hedeflere saldırıda kullanılması cluster'ı bir kötüye-kullanım kaynağına çevirir.",
+      "threat": "Botnet tarzı dışa dönük seller ele geçirilmiş konteynerin klasik işaretidir; detektörün cluster kapsamlı bir olay oluşturması beklenir."
+    },
+    "sec-ddos-stop": {
+      "name": "DDoS selini durdur",
+      "purpose": "Çalışan seli anında durdurarak testin istendiğinde bitirilmesini sağlar.",
+      "impact": "Operatörün süre sınırını beklemeden yükü kesmesini sağlar.",
+      "threat": "Kontrol eylemi — saldırı değil; sel süresi dolduğunda kendiliğinden de durur."
+    }
+  }
+}

@@ -1,0 +1,438 @@
+{
+  "ui": {
+    "title": "komuta-test-app — scenario console",
+    "bw.title": "Bandwidth Test",
+    "bw.desc": "Download = pod egress (Cilium BWM) · Upload = pod ingress (ingress-shaper). Throughput should clamp to the plan's limit. Test from a different node / external client.",
+    "bw.size": "Size (MB)",
+    "bw.download": "Download",
+    "bw.upload": "Upload",
+    "bw.running": "Running…",
+    "bw.error": "error",
+    "bw.egress": "egress (download)",
+    "bw.ingress": "ingress (upload)",
+    "bw.server": "server",
+    "bw.client": "client",
+    "subtitle": "Each scenario mimics a real behaviour, states what Komuta should do, and where to verify it.",
+    "refresh": "Refresh",
+    "lang.label": "Language",
+    "search.placeholder": "Search scenarios… (name, purpose, engine)",
+    "nav.categories": "Categories",
+    "nav.engine": "Engine",
+    "nav.allCats": "All categories",
+    "filter.allEngines": "All",
+    "results.label": "scenarios",
+    "noresults": "No matching scenarios — clear the filters",
+    "banner.ok": "M2M ingest configured — direct synthetic ingest + supply-chain scenarios are armed.",
+    "banner.warn": "M2M ingest NOT configured. Cluster-native security + Insights scenarios still work. To arm the rest, set:",
+    "cat.insights": "Insights — L7 traffic & fault scenarios",
+    "cat.security-native": "Security · cluster-native (real syscalls → KubeArmor/Tetragon → agent)",
+    "cat.security-ingest": "Security · direct synthetic ingest (M2M)",
+    "cat.supply-chain": "Supply chain · Tekton build-artifact ingest (M2M)",
+    "engine.KubeArmor": "KubeArmor",
+    "engine.Tetragon": "Tetragon",
+    "engine.Hubble": "Hubble",
+    "engine.Mixed": "Mixed (multi-stage)",
+    "engine.tip.KubeArmor": "Policy enforcement — blocks the forbidden action outright. Expected: DENIED.",
+    "engine.tip.Tetragon": "Runtime observability — sees and reports suspicious behaviour. Expected: OBSERVED/FLAGGED.",
+    "engine.tip.Hubble": "Network flow visibility (L3/L4/L7).",
+    "engine.tip.Mixed": "Multi-stage attack chain spanning more than one engine.",
+    "nav.technique": "Technique",
+    "filter.allTechniques": "All",
+    "technique.exec": "Process exec",
+    "technique.file-read": "File read",
+    "technique.file-write": "File write",
+    "technique.network": "Network connect",
+    "technique.capability": "Capability use",
+    "technique.dns": "DNS lookup",
+    "technique.mount": "Mount",
+    "technique.chain": "Attack chain",
+    "label.purpose": "Purpose",
+    "label.impact": "Impact",
+    "label.threat": "Why is it a threat?",
+    "label.does": "Does",
+    "label.expect": "Expected",
+    "label.komutaUi": "Verify in Komuta",
+    "btn.run": "Run scenario",
+    "btn.result": "Result",
+    "run.notRun": "not run yet",
+    "run.last": "last run",
+    "run.ok": "OK",
+    "run.check": "check",
+    "badge.m2m": "M2M"
+  },
+  "scenario": {
+    "insights-baseline-traffic": {
+      "name": "Steady L7 baseline",
+      "purpose": "Streams a realistic e-commerce traffic mix at a steady rate so Insights builds a normal-behaviour baseline.",
+      "impact": "Without a baseline, 'abnormal' can't be defined; this sets the reference point.",
+      "threat": "Not a threat — the healthy foundation every anomaly/SLO detection sits on top of."
+    },
+    "insights-latency-regression": {
+      "name": "Latency regression on checkout",
+      "purpose": "Adds artificial delay to the payment step to mimic a release that got slower.",
+      "impact": "Users can't complete checkout; revenue is directly hit.",
+      "threat": "Silent performance regression is the most-missed production issue. Insights should flag the anomaly and the culprit endpoint on its own."
+    },
+    "insights-error-spike": {
+      "name": "5xx error budget burn",
+      "purpose": "Returns server errors (500) at a high rate on one endpoint to mimic a service-quality drop.",
+      "impact": "Most user requests fail; the service is effectively unusable.",
+      "threat": "An error spike is the precursor to an outage. The SLO burn-rate alert should fire in time."
+    },
+    "insights-path-clustering": {
+      "name": "Path clustering fan-out",
+      "purpose": "Fires many distinct URLs to test whether similar paths collapse into one template.",
+      "impact": "If clustering fails, dashboards fill with thousands of useless rows and become unreadable.",
+      "threat": "Not a threat — a visibility test that keeps high-cardinality traffic meaningful."
+    },
+    "insights-deploy-impact": {
+      "name": "Deploy-impact (v1.0→v1.1-bug→v1.2-fix)",
+      "purpose": "Deploys the same app under three versions to test whether Insights labels them stable/regressed/improved.",
+      "impact": "If a bad release isn't spotted, users stay on the broken version.",
+      "threat": "Not seeing a bad deploy's impact quickly is the most common reason downtime drags on."
+    },
+    "sec-exec-shell": {
+      "name": "Spawn a shell (process block)",
+      "purpose": "Tries to start a command line (shell) inside the application container.",
+      "impact": "If an attacker opens a shell they can run any command in the container.",
+      "threat": "The first step after taking over an app is usually to open a shell. KubeArmor should block it."
+    },
+    "sec-read-secret": {
+      "name": "Read the password file",
+      "purpose": "Tries to read the sensitive file where system passwords are stored (/etc/shadow).",
+      "impact": "If readable, system passwords can be stolen and cracked.",
+      "threat": "Credential theft is a classic attack step; the app has no reason to touch this file."
+    },
+    "sec-install-tool": {
+      "name": "Package manager invocation",
+      "purpose": "Tries to run a package manager (apk/apt) to install a tool in the container.",
+      "impact": "If the attacker can install extra tools, their capability grows significantly.",
+      "threat": "Installing a tool into a running production container is almost always malicious; it should be read-only."
+    },
+    "sec-file-tamper": {
+      "name": "Tamper /etc (write outside /tmp)",
+      "purpose": "Tries to write a file into a protected system directory (/etc).",
+      "impact": "If system files can be modified, a persistent backdoor can be planted.",
+      "threat": "Persistence is how an attacker stays long-term; the app should only write to its temp area."
+    },
+    "sec-network-egress": {
+      "name": "Unexpected egress to public internet",
+      "purpose": "Tries to open an internet connection to a destination that is not allowed.",
+      "impact": "If the attacker can reach out, they can take commands and send stolen data.",
+      "threat": "Connecting out to a command-and-control server is the most typical compromised-container behaviour. Tetragon should see the egress."
+    },
+    "sec-honey-path": {
+      "name": "Honey-path access (deterministic Tetragon)",
+      "purpose": "Tries to access a deliberately planted decoy file that only an attacker would care about.",
+      "impact": "Touching the decoy is an almost-certain malicious signal; it gives early warning.",
+      "threat": "A honey-path is a quiet, high-confidence intrusion signal. Tetragon should turn the access into an event instantly."
+    },
+    "sec-dns-exfil": {
+      "name": "Suspicious DNS (exfil/C2 indicator)",
+      "purpose": "Makes an odd-looking domain lookup to mimic data exfiltration / command-and-control over DNS.",
+      "impact": "Because the leak hides inside DNS, it slips past most firewalls unnoticed.",
+      "threat": "A DNS tunnel is a stealthy way to steal data bypassing classic network controls. Tetragon should catch the abnormal lookup."
+    },
+    "sec-capability-use": {
+      "name": "Privileged capability use",
+      "purpose": "Attempts an admin-only operation (changing file ownership) to mimic capability abuse.",
+      "impact": "If a privileged capability can be used, the attacker is close to breaking container limits.",
+      "threat": "Privileged capabilities are the rungs that turn limited access into full control. The KubeArmor capability rule should catch it."
+    },
+    "sec-mount-attempt": {
+      "name": "Mount attempt (container-escape precursor)",
+      "purpose": "Attempts a filesystem mount to mimic the typical precursor of a container escape.",
+      "impact": "A successful mount can reach the host filesystem and take over the node.",
+      "threat": "A mount attempt is the classic herald of container escape. KubeArmor should block the syscall."
+    },
+    "sec-attack-chain": {
+      "name": "Multi-stage kill chain",
+      "purpose": "Runs shell → capability → secret-read → egress in order to mimic a real attack chain.",
+      "impact": "Steps that look weak alone become full compromise when combined.",
+      "threat": "Real attacks are chains, not single steps. The engines should link the steps and surface the chain."
+    },
+    "sec-exec-bash": {
+      "name": "Run bash",
+      "purpose": "Starts the bash shell inside the container.",
+      "threat": "A shell is the attacker's first foothold; a production app has no reason to spawn one. KubeArmor should block it."
+    },
+    "sec-exec-kubectl": {
+      "name": "Run kubectl in-pod",
+      "purpose": "Runs the Kubernetes CLI from inside a workload pod.",
+      "threat": "Cluster tooling inside an app pod usually means an attacker is exploring the cluster. It should not be there."
+    },
+    "sec-exec-curl": {
+      "name": "Run curl",
+      "purpose": "Runs curl, a common tool for downloading payloads or reaching out.",
+      "threat": "Attackers use curl to pull in second-stage tools. An app image rarely needs to exec it at runtime."
+    },
+    "sec-exec-wget": {
+      "name": "Run wget",
+      "purpose": "Runs wget, another common payload-download tool.",
+      "threat": "Like curl, wget is a classic way to fetch attacker tooling into a compromised container."
+    },
+    "sec-exec-nc": {
+      "name": "Run netcat",
+      "purpose": "Runs netcat, a Swiss-army tool for opening network connections and reverse shells.",
+      "threat": "Netcat in a running pod is a strong reverse-shell / exfil signal. It should be blocked."
+    },
+    "sec-exec-socat": {
+      "name": "Run socat",
+      "purpose": "Runs socat, a relay tool often used for reverse shells and tunnels.",
+      "threat": "Socat is a favourite for building covert channels; an app has no legitimate need to exec it."
+    },
+    "sec-exec-python": {
+      "name": "Run python3",
+      "purpose": "Starts the Python interpreter inside the container.",
+      "threat": "An interpreter lets an attacker run arbitrary code; an unexpected python exec is a red flag."
+    },
+    "sec-exec-perl": {
+      "name": "Run perl",
+      "purpose": "Starts the Perl interpreter inside the container.",
+      "threat": "Like python, an unexpected interpreter exec is a common way to run in-memory attacker code."
+    },
+    "sec-exec-nmap": {
+      "name": "Run nmap (scanner)",
+      "purpose": "Runs the nmap network scanner inside the pod.",
+      "threat": "A scanner running in a workload almost always means an attacker is mapping the network for lateral movement."
+    },
+    "sec-exec-base64": {
+      "name": "Run base64",
+      "purpose": "Runs base64, commonly used to encode data for stealthy exfiltration.",
+      "threat": "Base64 shows up in nearly every exfil and obfuscation chain; an unexpected exec is suspicious."
+    },
+    "sec-exec-chmod": {
+      "name": "Make a file executable (chmod +x)",
+      "purpose": "Marks a dropped file as executable with chmod +x.",
+      "threat": "Turning a just-dropped file executable is a textbook step before running attacker tooling."
+    },
+    "sec-exec-crontab": {
+      "name": "Run crontab",
+      "purpose": "Invokes crontab, used to schedule tasks for persistence.",
+      "threat": "Scheduling a job is how attackers survive restarts; crontab in an app pod is a persistence signal."
+    },
+    "sec-exec-ssh": {
+      "name": "Run ssh client",
+      "purpose": "Runs the ssh client to reach another host.",
+      "threat": "Outbound ssh from a workload is a classic lateral-movement move. It should not happen."
+    },
+    "sec-exec-dropped-bin": {
+      "name": "Drop and run a binary",
+      "purpose": "Copies a binary into /tmp, makes it executable, and runs it.",
+      "threat": "Dropping a tool and executing it is the core of most intrusions. Exec of an unknown binary should be blocked."
+    },
+    "sec-read-passwd": {
+      "name": "Read /etc/passwd",
+      "purpose": "Reads the system account list file.",
+      "threat": "Enumerating accounts is an early reconnaissance step; the app has no reason to read this file."
+    },
+    "sec-read-ssh-key": {
+      "name": "Read the SSH private key",
+      "purpose": "Tries to read root's SSH private key.",
+      "threat": "Stealing a private key lets an attacker log in elsewhere as you. This access should be blocked."
+    },
+    "sec-read-sa-token": {
+      "name": "Read the Kubernetes token",
+      "purpose": "Reads the pod's Kubernetes service-account token.",
+      "threat": "That token is the pod's cluster identity; stealing it lets an attacker act as the workload against the API server."
+    },
+    "sec-read-proc-environ": {
+      "name": "Read another process's environment",
+      "purpose": "Reads /proc/1/environ to peek at the main process's environment variables.",
+      "threat": "Environment variables often hold secrets; reading another process's env is a common credential-harvesting trick."
+    },
+    "sec-read-kubeconfig-admin": {
+      "name": "Read the cluster admin config",
+      "purpose": "Tries to read the cluster-admin kubeconfig.",
+      "threat": "This file is full cluster control; if a workload can read it, one compromised pod owns the whole cluster."
+    },
+    "sec-read-kubelet-conf": {
+      "name": "Read the kubelet config",
+      "purpose": "Tries to read the node's kubelet configuration.",
+      "threat": "Node config exposes how the host is set up and can aid a node takeover; a workload should never read it."
+    },
+    "sec-read-aws-creds": {
+      "name": "Read AWS credentials",
+      "purpose": "Tries to read stored cloud (AWS) credentials.",
+      "threat": "Stolen cloud keys let an attacker pivot into your cloud account. This file should be off-limits."
+    },
+    "sec-read-kube-config": {
+      "name": "Read the user kubeconfig",
+      "purpose": "Tries to read a user kubeconfig file.",
+      "threat": "A kubeconfig is cluster credentials in a file; reading it is a direct credential-theft attempt."
+    },
+    "sec-write-authkeys": {
+      "name": "Plant an SSH backdoor key",
+      "purpose": "Writes an SSH authorized_keys entry to allow silent future logins.",
+      "threat": "Adding a key gives an attacker a permanent back door. Writing this file should be blocked."
+    },
+    "sec-write-cron": {
+      "name": "Plant a cron persistence job",
+      "purpose": "Writes a scheduled job into /etc/cron.d.",
+      "threat": "A cron entry re-runs attacker code on a schedule; it's one of the most common persistence tricks."
+    },
+    "sec-write-usrbin": {
+      "name": "Drop a file into /usr/bin",
+      "purpose": "Writes a file into the system binaries directory.",
+      "threat": "Placing a file among trusted binaries can hijack normal commands; system dirs should be read-only."
+    },
+    "sec-write-ldpreload": {
+      "name": "Tamper with ld.so.preload",
+      "purpose": "Writes /etc/ld.so.preload to force a malicious library to load.",
+      "threat": "ld.so.preload silently injects code into every program; it's a stealthy, powerful backdoor technique."
+    },
+    "sec-write-bashrc": {
+      "name": "Tamper with .bashrc",
+      "purpose": "Writes root's shell startup file.",
+      "threat": "Shell-startup files re-run attacker commands on each login; a classic quiet persistence spot."
+    },
+    "sec-write-spoolcron": {
+      "name": "Plant a user crontab",
+      "purpose": "Writes a user crontab under /var/spool/cron.",
+      "threat": "Another persistence path: a user crontab re-runs code on a schedule and is easy to overlook."
+    },
+    "sec-net-dns-tcp": {
+      "name": "Direct connection to public DNS",
+      "purpose": "Opens a TCP connection straight to a public DNS resolver (1.1.1.1).",
+      "threat": "Reaching an external resolver directly can bypass controls and be used for tunnelling; egress should be limited."
+    },
+    "sec-net-oddport": {
+      "name": "Connect to an odd high port",
+      "purpose": "Opens a TCP connection to an unusual high port on the internet.",
+      "threat": "Odd-port egress is a common command-and-control pattern; normal traffic doesn't use random high ports."
+    },
+    "sec-net-metadata": {
+      "name": "Reach the cloud metadata endpoint",
+      "purpose": "Connects to the cloud metadata address (169.254.169.254).",
+      "threat": "That endpoint hands out cloud credentials; SSRF against it is a top cloud-attack technique and must be blocked."
+    },
+    "sec-net-revshell": {
+      "name": "Connect to a reverse-shell port",
+      "purpose": "Opens a TCP connection to the classic reverse-shell port 4444.",
+      "threat": "Outbound to 4444 is a textbook reverse-shell signal; the network policy should drop it."
+    },
+    "sec-cap-setuid": {
+      "name": "Become root (setuid)",
+      "purpose": "Tries to switch the process user to root.",
+      "threat": "Becoming root inside the container removes the main safety limit; a dropped-privilege pod should return denied."
+    },
+    "sec-cap-net-raw": {
+      "name": "Open a raw network socket",
+      "purpose": "Tries to create a raw network socket (needs a special privilege).",
+      "threat": "Raw sockets enable spoofing and stealth scanning; an app should not hold that capability."
+    },
+    "sec-cap-ptrace": {
+      "name": "Attach to another process (ptrace)",
+      "purpose": "Tries to attach to the main process to inspect or inject into it.",
+      "threat": "Process attachment enables code injection and secret theft from other processes; it should be denied."
+    },
+    "sec-cap-sethostname": {
+      "name": "Change the hostname",
+      "purpose": "Tries to change the container hostname (an admin-only operation).",
+      "threat": "Needing this admin privilege signals over-permissioning; a normal workload should be denied CAP_SYS_ADMIN."
+    },
+    "sec-cap-mknod": {
+      "name": "Create a device node (mknod)",
+      "purpose": "Tries to create a device file inside the container.",
+      "threat": "Creating device nodes can expose raw hardware/disk access and aid an escape; the capability should be dropped."
+    },
+    "sec-dns-longlabel": {
+      "name": "DNS tunnel (long-label lookup)",
+      "purpose": "Makes a lookup with a very long, encoded-looking name to mimic data smuggled inside DNS.",
+      "threat": "Long, high-entropy DNS names are the signature of DNS tunnelling; Tetragon should flag the abnormal query."
+    },
+    "sec-mount-procremount": {
+      "name": "Remount /proc",
+      "purpose": "Tries to remount the /proc filesystem.",
+      "threat": "Remounting /proc is a known step toward escaping the container's isolation; the mount should be denied."
+    },
+    "sec-chain-cred-access": {
+      "name": "Credential-access chain",
+      "purpose": "Reads the Kubernetes token, hits the cloud metadata endpoint, then reaches out — in order.",
+      "threat": "This is the canonical steal-credentials → pivot-to-cloud → exfiltrate chain; the engines should link the steps."
+    },
+    "sec-chain-privesc": {
+      "name": "Privilege-escalation chain",
+      "purpose": "Opens a shell, makes a file executable, then tries to become root — in order.",
+      "threat": "A realistic local privilege-escalation sequence; correlated exec and privilege findings should surface as one chain."
+    },
+    "sec-ingest-runtime-tetragon": {
+      "name": "Synthetic Tetragon runtime batch",
+      "purpose": "Sends a batch of Tetragon-shaped events straight to the backend, no real cluster needed, to test the detection path.",
+      "impact": "If the path is broken, real threats stay invisible; this catches that early.",
+      "threat": "Threat simulation — proves the Tetragon→agent→Security Center path works end to end."
+    },
+    "sec-ingest-runtime-kubearmor": {
+      "name": "Synthetic KubeArmor runtime batch",
+      "purpose": "Sends a batch of KubeArmor violations straight to the backend to test the finding-generation path.",
+      "impact": "If broken, blocked violations are never reported; this catches that early.",
+      "threat": "Threat simulation — proves the KubeArmor→finding path works end to end."
+    },
+    "sec-ingest-runtime-hubble": {
+      "name": "Synthetic Hubble runtime batch",
+      "purpose": "Sends a batch of Hubble network flows straight to the backend to test the flow ingest path.",
+      "impact": "If broken, network visibility is lost; this catches that early.",
+      "threat": "Threat simulation — proves the Hubble flow ingest path works end to end."
+    },
+    "sec-ingest-observations": {
+      "name": "KubeArmor observations → finding",
+      "purpose": "Sends raw KubeArmor observations and checks they turn into a meaningful security finding.",
+      "impact": "If the conversion is broken, violations stay raw data nobody notices.",
+      "threat": "Threat simulation — proves the observation→actionable-finding step works."
+    },
+    "sec-collector-decay": {
+      "name": "Collector heartbeat then silence",
+      "purpose": "Sends regular signal then goes quiet to mimic a security collector crashing.",
+      "impact": "If a collector dies silently, all detection goes blind while dashboards still look 'green'.",
+      "threat": "A silently dead security sensor is the most dangerous blind spot. The system should raise a 'went silent' alarm."
+    },
+    "sec-synthetic-attack": {
+      "name": "Synthetic attack run trigger",
+      "purpose": "Externally triggers Security Center's scheduled attack-drill mechanism.",
+      "impact": "If drills don't run, detection SLAs are never measured.",
+      "threat": "Threat simulation — verifies the mechanism that regularly self-tests detection capability."
+    },
+    "supply-sbom": {
+      "name": "Build artifact: SBOM",
+      "purpose": "Sends a post-build software bill of materials to the backend to test supply-chain recording.",
+      "impact": "If the SBOM isn't recorded, you can't trace which component shipped in which version.",
+      "threat": "Supply-chain visibility is the precondition for tracing component-based vulnerabilities."
+    },
+    "supply-scan-critical": {
+      "name": "Build artifact: scan (critical CVEs)",
+      "purpose": "Sends a scan result containing critical vulnerabilities to test the vulnerability gate's reaction.",
+      "impact": "If a critically-vulnerable image isn't blocked, known-vulnerable code ships to production.",
+      "threat": "Shipping a known critically-vulnerable image is the most preventable yet most-neglected risk."
+    },
+    "supply-sign": {
+      "name": "Build artifact: signature",
+      "purpose": "Sends a signature-verification record to test that only trusted-source images are accepted.",
+      "impact": "If signing isn't enforced, an attacker can slip a forged/tampered image in.",
+      "threat": "Accepting unsigned images is the classic way malicious code enters the supply chain."
+    },
+    "supply-fail": {
+      "name": "Build artifact: failure",
+      "purpose": "Sends a build/security-gate failure to test that a failed build is recorded and blocked.",
+      "impact": "If failures are swallowed, a broken/insecure build can quietly proceed.",
+      "threat": "Silently passing a failed gate effectively disables the security checks."
+    },
+    "sec-ddos-flood-self": {
+      "name": "DDoS flood — self-service (auto-resolve, world fallback)",
+      "purpose": "Opens tens of thousands of fresh connections to this app's own service to prove the DDoS detector actually fires on real traffic.",
+      "impact": "Left undetected, a connection flood exhausts the service and takes it down for real users.",
+      "threat": "Volumetric floods are the most common denial-of-service pattern; the detector should raise an incident attributed to this service (or cluster-scoped if it fell back to world mode)."
+    },
+    "sec-ddos-flood-world": {
+      "name": "DDoS flood — external host (cluster-scoped)",
+      "purpose": "Floods an external host from inside the pod to prove the detector also catches outbound floods with no tenant destination.",
+      "impact": "A compromised workload used to attack outside targets makes the cluster a source of abuse.",
+      "threat": "Botnet-style outbound floods are a classic sign of a hijacked container; the detector should raise a cluster-scoped incident."
+    },
+    "sec-ddos-stop": {
+      "name": "Stop DDoS flood",
+      "purpose": "Immediately stops any running flood so the test can be ended on demand.",
+      "impact": "Lets the operator cut the load without waiting for the duration cap.",
+      "threat": "Control action — not an attack; the flood also stops itself when its duration elapses."
+    }
+  }
+}
