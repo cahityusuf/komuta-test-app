@@ -185,7 +185,7 @@ func ingestStatus(w http.ResponseWriter, _ *http.Request) {
 // high-cardinality paths so the backend's clustering has something to
 // collapse. Self-directed against localhost like the traffic gen.
 func fanOutPaths(p string) map[string]any {
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := tracedHTTPClient(5*time.Second, nil)
 	base := "http://127.0.0.1:" + p
 	sent := 0
 	for i := 0; i < 30; i++ {

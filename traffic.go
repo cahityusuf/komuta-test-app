@@ -125,7 +125,7 @@ func runTrafficWorkers(ctx context.Context, rps int, mix []string, port string) 
 	tick := time.NewTicker(interval)
 	defer tick.Stop()
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := tracedHTTPClient(10*time.Second, nil)
 	jobs := make(chan string, 256)
 
 	workerCount := minInt(rps, 32)

@@ -54,6 +54,12 @@ func main() {
 	// (or known-slow) baseline without manual setup.
 	applyVersionPresets(AppVersion)
 
+	shutdownTelemetry, err := initTelemetry(context.Background())
+	if err != nil {
+		log.Printf("[komuta-test-app] OpenTelemetry disabled: %v", err)
+		shutdownTelemetry = func(context.Context) error { return nil }
+	}
+
 	// Embedded localization bundles (tr = default, en = fallback) must
 	// load before any handler can serve the localized catalogue. Fatal
 	// on a malformed bundle — a half-localized console is worse than a
@@ -77,7 +83,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           withRequestLog(mux),
+		Handler:           tracedHTTPHandler(mux, withRequestLog(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -100,6 +106,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(ctx)
+	if err := shutdownTelemetry(ctx); err != nil {
+		log.Printf("[komuta-test-app] OpenTelemetry shutdown: %v", err)
+	}
 }
 
 // withRequestLog stamps every request with method, path, status and
