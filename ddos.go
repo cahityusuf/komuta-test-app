@@ -292,6 +292,9 @@ func runDdosFlood(ctx context.Context, cfg ddosFloodCfg) {
 		DialContext:       (&net.Dialer{Timeout: 3 * time.Second}).DialContext,
 	}
 	defer transport.CloseIdleConnections()
+	// Deliberately not traced: this generator creates tens of thousands of
+	// fresh connections for the L4 detector and would otherwise flood the trace
+	// exporter with synthetic client spans unrelated to application behaviour.
 	client := &http.Client{Timeout: 5 * time.Second, Transport: transport}
 
 	url := "http://" + cfg.Target + cfg.Path

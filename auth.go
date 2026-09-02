@@ -73,7 +73,7 @@ func initTokenManager() {
 	cfg := loadIngestConfig()
 	ingestTokens = &tokenManager{
 		cfg:  cfg,
-		http: &http.Client{Timeout: 15 * time.Second},
+		http: tracedHTTPClient(15*time.Second, nil),
 	}
 }
 

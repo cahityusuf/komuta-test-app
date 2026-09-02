@@ -178,7 +178,7 @@ func trigFileTamper() triggerOutcome { return writeTrig("/etc/passwd.injected")(
 
 func trigNetworkEgress() triggerOutcome {
 	target := "http://example.com"
-	client := &http.Client{Timeout: 3 * time.Second}
+	client := tracedHTTPClient(3*time.Second, nil)
 	resp, err := client.Get(target)
 	if err != nil {
 		return outcome("network-egress:"+target, nil, err)
