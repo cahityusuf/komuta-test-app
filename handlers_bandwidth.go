@@ -74,6 +74,11 @@ func bandwidthUpload(w http.ResponseWriter, r *http.Request) {
 		"received_bytes": n,
 		"seconds":        bwRound(seconds, 3),
 		"mbps":           bwRound(mbps, 2),
+		// Expose the TCP peer seen by the Pod so bandwidth acceptance can
+		// distinguish direct Internet traffic from a trusted in-cluster
+		// Gateway/Envoy hop. This is diagnostic metadata only; forwarding
+		// headers remain intentionally ignored because clients can forge them.
+		"remote_addr": r.RemoteAddr,
 	}
 	if err != nil {
 		// Partial read still reports what arrived (fail-soft for test tooling).
