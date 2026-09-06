@@ -9,6 +9,7 @@ import (
 // This diagnostic is CLI-only. It starts no HTTP listener, telemetry exporter,
 // token manager or fault injection and never reads environment or secret files.
 type runtimeProbeReport struct {
+	ProcessRole       string            `json:"processRole"`
 	SchemaVersion     int               `json:"schemaVersion"`
 	Observation       string            `json:"observation"`
 	Process           map[string]string `json:"process"`
@@ -17,7 +18,13 @@ type runtimeProbeReport struct {
 }
 
 func writeRuntimeProbe(w io.Writer) {
-	_ = json.NewEncoder(w).Encode(observeRuntime())
+	writeRuntimeObservation(w, "diagnostic-exec")
+}
+
+func writeRuntimeObservation(w io.Writer, role string) {
+	r := observeRuntime()
+	r.ProcessRole = role
+	_ = json.NewEncoder(w).Encode(r)
 }
 
 func selectedProcessStatus(status string) map[string]string {

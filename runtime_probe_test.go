@@ -17,7 +17,7 @@ func TestRuntimeProbeOnlySelectsProcessSecurityFields(t *testing.T) {
 	var out bytes.Buffer
 	writeRuntimeProbe(&out)
 	var report runtimeProbeReport
-	if err := json.Unmarshal(out.Bytes(), &report); err != nil || report.SchemaVersion != 1 || report.Observation == "" {
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil || report.SchemaVersion != 1 || report.Observation == "" || report.ProcessRole != "diagnostic-exec" {
 		t.Fatal("invalid observation", err)
 	}
 }
