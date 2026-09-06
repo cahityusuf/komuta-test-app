@@ -273,3 +273,8 @@ not an enforcement/DENY test or a product-readiness verdict.
 ├── deploy/              # sample k8s manifests
 └── Dockerfile           # multi-stage Go → alpine runtime
 ```
+
+The server also emits the same bounded observation once at startup with
+`processRole=main-server`. CLI observations use `processRole=diagnostic-exec`;
+these are separate processes and must not be treated as interchangeable security
+evidence. Neither observation proves a DENY policy test passed.

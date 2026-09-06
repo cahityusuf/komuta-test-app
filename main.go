@@ -43,6 +43,8 @@ func main() {
 		writeRuntimeProbe(os.Stdout)
 		return
 	}
+	// Observe the actual server process before startup; exec diagnostics may differ.
+	writeRuntimeObservation(os.Stdout, "main-server")
 	if v := os.Getenv("APP_VERSION"); v != "" {
 		AppVersion = v
 	}
