@@ -241,6 +241,15 @@ docker run --rm -p 8080:8080 -e APP_VERSION=v1.0-clean komuta-test-app:dev
 
 A reference standalone manifest is in [`deploy/komuta-service.yaml`](deploy/komuta-service.yaml).
 
+### Runtime acceptance observation
+
+Run `/app --runtime-acceptance-probe` inside the application container to emit one
+JSON observation of its own process security fields and the LSM-specific AppArmor
+profile. This mode starts no server, telemetry exporter, token manager or security
+trigger. It reads only fixed procfs paths and exposes no environment or file contents
+outside that allowlist. Missing profile data is reported explicitly; the output is
+not an enforcement/DENY test or a product-readiness verdict.
+
 ## Layout
 
 ```

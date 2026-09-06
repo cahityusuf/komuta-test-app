@@ -39,6 +39,10 @@ var uiFS embed.FS
 var AppVersion = "v0.0.0-dev"
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--runtime-acceptance-probe" {
+		writeRuntimeProbe(os.Stdout)
+		return
+	}
 	if v := os.Getenv("APP_VERSION"); v != "" {
 		AppVersion = v
 	}
