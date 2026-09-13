@@ -60,18 +60,19 @@ func initTelemetry(ctx context.Context) (func(context.Context) error, error) {
 }
 
 // tracedHTTPHandler records inbound requests and updates the span with the
-// Go 1.22 ServeMux route pattern after routing. Route templates keep IDs and
-// search terms out of operation names and make endpoint grouping useful.
+// Go 1.22 ServeMux route pattern after routing. The method stays in its own
+// semantic attribute; http.route contains only the route template.
 func tracedHTTPHandler(routes *http.ServeMux, next http.Handler) http.Handler {
 	routeAware := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, pattern := routes.Handler(r)
 		next.ServeHTTP(w, r)
-		if pattern == "" {
+		route := muxRoute(r.Method, pattern)
+		if route == "" {
 			return
 		}
 		span := trace.SpanFromContext(r.Context())
-		span.SetName(pattern)
-		span.SetAttributes(attribute.String("http.route", pattern))
+		span.SetName(r.Method + " " + route)
+		span.SetAttributes(attribute.String("http.route", route))
 	})
 	return otelhttp.NewHandler(
 		routeAware,
@@ -80,6 +81,14 @@ func tracedHTTPHandler(routes *http.ServeMux, next http.Handler) http.Handler {
 			return r.URL.Path != "/healthz" && r.URL.Path != "/readyz"
 		}),
 	)
+}
+
+func muxRoute(method, pattern string) string {
+	pattern = strings.TrimSpace(pattern)
+	if prefix := method + " "; strings.HasPrefix(pattern, prefix) {
+		return strings.TrimSpace(strings.TrimPrefix(pattern, prefix))
+	}
+	return pattern
 }
 
 func tracedHTTPClient(timeout time.Duration, transport http.RoundTripper) *http.Client {
