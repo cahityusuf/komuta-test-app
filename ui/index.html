@@ -186,6 +186,12 @@
           <button class="ghost" id="bwUlBtn" onclick="bwUpload()">↑ Yükleme</button>
         </div>
         <pre class="result show" id="bwResult" style="margin-top:10px"></pre>
+        <div class="lastrun" id="bwSelfDesc" style="margin-top:14px"></div>
+        <div class="row" style="margin-top:8px;align-items:center;gap:8px;flex-wrap:wrap">
+          <button id="bwSelfInBtn" onclick="bwSelfTest('ingress')">↓ Pod öz-testi (gelen)</button>
+          <button class="ghost" id="bwSelfOutBtn" onclick="bwSelfTest('egress')">↑ Pod öz-testi (giden)</button>
+        </div>
+        <pre class="result show" id="bwSelfResult" style="margin-top:10px"></pre>
       </section>
 
       <div id="cats"></div>
@@ -516,7 +522,9 @@ async function bwDownload(){
     const r=await fetch('/api/bandwidth/download?mb='+mb,{cache:'no-store'});
     const buf=await r.arrayBuffer();
     const secs=(performance.now()-t0)/1000;
-    out.textContent='↓ '+t('bw.egress','egress')+': '+(buf.byteLength/1048576).toFixed(1)+' MB · '+secs.toFixed(2)+' s · '+bwMbps(buf.byteLength,secs)+' Mbit/s';
+    let server='';
+    try{ const l=await (await fetch('/api/bandwidth/last-download',{cache:'no-store'})).json(); if(l&&l.mbps!==undefined) server=' · '+t('bw.server','server')+' '+l.mbps+' Mbit/s'; }catch(_){}
+    out.textContent='↓ '+t('bw.egress','egress')+': '+(buf.byteLength/1048576).toFixed(1)+' MB · '+secs.toFixed(2)+' s'+server+' · '+t('bw.client','client')+' '+bwMbps(buf.byteLength,secs)+' Mbit/s';
   }catch(e){ out.textContent='↓ '+t('bw.error','error')+': '+e; }
   finally{ btn.disabled=false; }
 }
@@ -535,12 +543,31 @@ async function bwUpload(){
   finally{ btn.disabled=false; }
 }
 
+async function bwSelfTest(direction){
+  const btnIn=document.getElementById('bwSelfInBtn'), btnOut=document.getElementById('bwSelfOutBtn'), out=document.getElementById('bwSelfResult');
+  btnIn.disabled=true; btnOut.disabled=true; out.textContent=t('bw.selfRunning','Running for 20 s…');
+  try{
+    const r=await fetch('/api/bandwidth/selftest?direction='+direction+'&seconds=20',{method:'POST',cache:'no-store'});
+    const j=await r.json();
+    if(!r.ok){ out.textContent=t('bw.error','error')+': '+(j.error||r.status); return; }
+    const label=direction==='ingress'?t('bw.selfIn','Pod ingress (pull from internet)'):t('bw.selfOut','Pod egress (push to internet)');
+    out.textContent=label+'\n'
+      +t('bw.steady','steady')+': '+j.steady_mbps+' Mbit/s · '+t('bw.average','average')+': '+j.average_mbps+' Mbit/s · '+(j.total_bytes/1e6).toFixed(1)+' MB · '+j.seconds+' s\n'
+      +t('bw.perSecond','per second')+': '+(j.per_second_mbps||[]).join('  ')
+      +(j.error?'\n'+t('bw.error','error')+': '+j.error:'');
+  }catch(e){ out.textContent=t('bw.error','error')+': '+e; }
+  finally{ btnIn.disabled=false; btnOut.disabled=false; }
+}
+
 function bwApplyI18n(){
   document.getElementById('bwTitle').textContent  = t('bw.title','Bandwidth Test');
   document.getElementById('bwDesc').textContent   = t('bw.desc','Download = pod egress · Upload = pod ingress. Throughput should clamp to the plan limit. Test from another node / external.');
   document.getElementById('bwSizeLabel').textContent = t('bw.size','Size (MB)');
   document.getElementById('bwDlBtn').textContent  = '↓ '+t('bw.download','Download');
   document.getElementById('bwUlBtn').textContent  = '↑ '+t('bw.upload','Upload');
+  document.getElementById('bwSelfDesc').textContent = t('bw.selfDesc','Pod self-test: the Pod itself pulls from / pushes to a fast internet endpoint for 20 s. Independent of your own connection; the steady rate should match the plan limit.');
+  document.getElementById('bwSelfInBtn').textContent = '↓ '+t('bw.selfInBtn','Pod self-test (ingress)');
+  document.getElementById('bwSelfOutBtn').textContent = '↑ '+t('bw.selfOutBtn','Pod self-test (egress)');
 }
 
 (async function init(){

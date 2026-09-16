@@ -2,7 +2,7 @@
   "ui": {
     "title": "komuta-test-app — senaryo konsolu",
     "bw.title": "Bandwidth Testi",
-    "bw.desc": "İndirme = pod egress (Cilium BWM) · Yükleme = pod ingress (ingress-shaper). Ölçülen hız plana atanan limite sıkışmalıdır. Farklı node'dan / dışarıdan test et.",
+    "bw.desc": "İndirme = pod'dan dışarı giden trafik (egress) · Yükleme = pod'a gelen trafik (ingress). Bu testler tarayıcının bağlantısını da ölçer; hattınız plan limitinden yavaşsa sonuç limiti değil hattınızı gösterir.",
     "bw.size": "Boyut (MB)",
     "bw.download": "İndirme",
     "bw.upload": "Yükleme",
@@ -58,7 +58,16 @@
     "run.last": "son çalıştırma",
     "run.ok": "TAMAM",
     "run.check": "kontrol et",
-    "badge.m2m": "M2M"
+    "badge.m2m": "M2M",
+    "bw.selfDesc": "Pod öz-testi: pod 20 saniye boyunca internetteki hızlı bir uçtan kendisi çeker / oraya kendisi gönderir. Sizin bağlantınızdan bağımsızdır; kararlı hız plan limitine oturmalıdır.",
+    "bw.selfInBtn": "Pod öz-testi (gelen)",
+    "bw.selfOutBtn": "Pod öz-testi (giden)",
+    "bw.selfRunning": "20 saniye çalışıyor…",
+    "bw.selfIn": "Pod gelen (internetten çekme)",
+    "bw.selfOut": "Pod giden (internete gönderme)",
+    "bw.steady": "kararlı",
+    "bw.average": "ortalama",
+    "bw.perSecond": "saniye saniye"
   },
   "scenario": {
     "insights-baseline-traffic": {

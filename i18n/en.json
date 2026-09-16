@@ -2,7 +2,7 @@
   "ui": {
     "title": "komuta-test-app — scenario console",
     "bw.title": "Bandwidth Test",
-    "bw.desc": "Download = pod egress (Cilium BWM) · Upload = pod ingress (ingress-shaper). Throughput should clamp to the plan's limit. Test from a different node / external client.",
+    "bw.desc": "Download = traffic leaving the Pod (egress) · Upload = traffic reaching the Pod (ingress). These tests also measure your browser's connection; if it is slower than the plan limit, the result shows your connection, not the limit.",
     "bw.size": "Size (MB)",
     "bw.download": "Download",
     "bw.upload": "Upload",
@@ -58,7 +58,16 @@
     "run.last": "last run",
     "run.ok": "OK",
     "run.check": "check",
-    "badge.m2m": "M2M"
+    "badge.m2m": "M2M",
+    "bw.selfDesc": "Pod self-test: the Pod itself pulls from / pushes to a fast internet endpoint for 20 s. Independent of your own connection; the steady rate should match the plan limit.",
+    "bw.selfInBtn": "Pod self-test (ingress)",
+    "bw.selfOutBtn": "Pod self-test (egress)",
+    "bw.selfRunning": "Running for 20 s…",
+    "bw.selfIn": "Pod ingress (pull from internet)",
+    "bw.selfOut": "Pod egress (push to internet)",
+    "bw.steady": "steady",
+    "bw.average": "average",
+    "bw.perSecond": "per second"
   },
   "scenario": {
     "insights-baseline-traffic": {
