@@ -47,6 +47,7 @@ func registerAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/search", apiHandler("GET /api/search", search))
 	mux.HandleFunc("GET /api/users/me", apiHandler("GET /api/users/me", whoami))
 	mux.HandleFunc("GET /api/admin/users", apiHandler("GET /api/admin/users", listUsers))
+	mux.HandleFunc("GET /api/identity", identityHandler(newIdentityKeySet()))
 }
 
 // apiHandler wraps a business handler with:
